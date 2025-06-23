@@ -2,12 +2,12 @@
 Contributors: swaptify
 Donate link: https://github.com/swaptify
 Tags: comments, spam
-Requires at least: 6.2.2
-Tested up to: 6.7.2
+Requires at least: 6.8
+Tested up to: 6.8
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Requires PHP: 7.4
+Requires PHP: 8.0
 
 Cost-effective website personalization for perfected user experience and dramatically more conversions.
 
@@ -90,6 +90,12 @@ NEEDED This section describes how to install the plugin and get it working.
 1. You should return to the same page with a list of your properties now present
 1. Select the property for this site and click save
 1. Under the Swaptify menu, click `shortcode generator` to start making swaps!
+
+== External Services ==
+
+The Swaptify Plugin connects to the Swaptify API to send usage data and return content. The information passed to the Swaptify API includes visitor IP address and page URL. This information is stored with Swaptify and used when analyzing visitor activity from page to page.
+
+All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy](https://swaptify.com/terms-and-conditions/) and [Terms and Conditions](https://swaptify.com/terms-and-conditions/)
 
 == Screenshots ==
 1. Shortcode Generator

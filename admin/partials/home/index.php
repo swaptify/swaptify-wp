@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Provide a admin area view for the plugin
  *
@@ -19,7 +21,7 @@
 <h2>Swaptify Overview</h2>  
     <nav class="nav-tab-wrapper">
     <?php foreach ($tabs as $tab): ?>
-        <a href="?page=swaptify&tab=<?php echo(esc_attr($tab['url'])) ?>" class="nav-tab <?php echo(esc_attr($tab['active'] ? 'nav-tab-active' : '')) ?>"><?php echo(esc_html($tab['name'])) ?></a>
+        <a href="?page=swaptify&tab=<?php echo(esc_attr($tab['url'])) ?>&tab_nonce=<?php echo(esc_attr(wp_create_nonce('tab'))) ?>" class="nav-tab <?php echo(esc_attr($tab['active'] ? 'nav-tab-active' : '')) ?>"><?php echo(esc_html($tab['name'])) ?></a>
     <?php endforeach; ?>
     </nav>
     <div class="tab-content">

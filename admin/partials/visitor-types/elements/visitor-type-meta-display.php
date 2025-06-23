@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Form field for showing visitor types when editing a page
  *
@@ -10,7 +12,8 @@
  * @subpackage swaptify/admin/partials/visitor-types/elements
  */
 ?>
-<select name="swap_visitor_type">
+<?php wp_nonce_field('meta_page_visitor_types', 'meta_page_visitor_types'); ?>
+<select name="swaptify_visitor_type">
     <option value="">&mdash; Select Visitor Type &mdash;</option>
     <?php foreach ($visitor_types as $key => $object): ?>   
         <option 

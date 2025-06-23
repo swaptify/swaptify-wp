@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Form field for showing page view events when editing a page
  *
@@ -10,14 +12,15 @@
  * @subpackage swaptify/admin/partials/events/elements
  */
 ?>
+<?php wp_nonce_field('meta_page_events', 'meta_page_events'); ?>
 <?php foreach ($events as $key => $object): ?>   
-    <?php $swap_event_id = 'swap-' . $key; ?>
+    <?php $swaptify_event_id = 'swap-' . $key; ?>
     <div>
-        <label for="<?php echo(esc_attr($swap_event_id)); ?>">
+        <label for="<?php echo(esc_attr($swaptify_event_id)); ?>">
             <input 
-                id="<?php echo(esc_attr($swap_event_id)); ?>" 
+                id="<?php echo(esc_attr($swaptify_event_id)); ?>" 
                 type="checkbox" 
-                name="swap_events[]" 
+                name="swaptify_events[]" 
                 value="<?php echo(esc_attr($key)); ?>" 
                 <?php echo((isset($object->checked) && $object->checked) ? 'checked="checked"':''); ?> 
             />

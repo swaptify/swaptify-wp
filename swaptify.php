@@ -50,7 +50,7 @@ define('swaptify_version', '1.0.0');
  * 
  * @return void
  */
-function activate_swaptify() 
+function swaptify_activate() 
 {
     require_once plugin_dir_path(__FILE__) . 'includes/class-swaptify-activator.php';
     Swaptify_Activator::activate();
@@ -65,7 +65,7 @@ function activate_swaptify()
  * 
  * @return void
  */
-function deactivate_swaptify() 
+function swaptify_deactivate() 
 {
     require_once plugin_dir_path(__FILE__) . 'includes/class-swaptify-deactivator.php';
     Swaptify_Deactivator::deactivate();
@@ -74,8 +74,8 @@ function deactivate_swaptify()
 /**
  * register hooks for activation and deactivation
  */
-register_activation_hook(__FILE__, 'activate_swaptify');
-register_deactivation_hook(__FILE__, 'deactivate_swaptify');
+register_activation_hook(__FILE__, 'swaptify_activate');
+register_deactivation_hook(__FILE__, 'swaptify_deactivate');
 
 /**
  * The core plugin class that is used to define internationalization,
@@ -92,7 +92,7 @@ require plugin_dir_path(__FILE__) . 'includes/class-swaptify.php';
  * 
  * @return void
  */
-function run_swaptify() 
+function swaptify_run() 
 {
     $plugin = new Swaptify();
     $plugin->run();
@@ -101,4 +101,4 @@ function run_swaptify()
 /**
  * Start the Swaptify plugin
  */
-run_swaptify();
+swaptify_run();

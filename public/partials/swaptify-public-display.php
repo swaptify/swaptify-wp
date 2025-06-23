@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * placeholder page from the plugin boilerplate. keeping this here in case future development requires it
  *

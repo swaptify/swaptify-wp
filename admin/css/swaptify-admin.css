@@ -161,3 +161,74 @@
     max-width: 900px;
     padding-right: 20px;
 }
+
+.create-segment-form {
+    margin-top: 20px;
+}
+
+/* SEGMENT SHORTCODE FORM */
+.swaptify-segment-form-left 
+{
+    width: 25%;
+    background: #E5E5E5;
+}
+
+.swaptify-segment-form-right 
+{
+    width: 75%;
+    background: #DCDCDC;
+}
+.swaptify-segment-form-left,
+.swaptify-segment-form-right {
+    float:left;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.swap-preview-image {
+    max-width: 300px;
+    vertical-align: middle;
+}
+.swap-preview-link span {
+    vertical-align: text-top;
+    text-decoration: none;
+}
+.swap-preview-link a {
+    text-decoration: none;
+}
+.swap-preview-link {
+    margin-left: 10px;
+    text-decoration: none;
+}
+.swap-div {
+    margin-bottom: 30px; 
+    background:#DFDFDF; 
+    display:flex;
+}
+
+.button.remove,
+.button.delete {
+    margin: 10px 0;
+    background:rgba(225,0,0,0.7);
+}
+.button.remove, 
+.button.remove:hover, 
+.button.remove:enabled, 
+.button.remove:focus, 
+.button.remove:active,
+.button.delete, 
+.button.delete:hover, 
+.button.delete:enabled, 
+.button.delete:focus, 
+.button.delete:active {
+    color: white;
+    border-color: rgb(255, 0, 0);
+}
+.button.remove:active, .button.remove:focus,
+.button.delete:active, .button.delete:focus {
+    background:rgba(225,0,0,0.8);
+}
+.button.remove:hover,
+.button.delete:hover {
+    background:rgba(225,0,0,0.6);
+}

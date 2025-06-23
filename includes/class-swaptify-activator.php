@@ -63,13 +63,13 @@ class Swaptify_Activator
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "post_swap_segments"; 
+        $table_name = $wpdb->prefix . "post_swaptify_segments"; 
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             wp_post_id BIGINT(20) UNSIGNED NOT NULL,
-            swap_segment_key VARCHAR(64), 
+            segment_key VARCHAR(64), 
             active TINYINT(1) DEFAULT 1, 
             PRIMARY KEY  (id)
         ) $charset_collate;";
@@ -88,7 +88,7 @@ class Swaptify_Activator
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "post_swap_events"; 
+        $table_name = $wpdb->prefix . "post_swaptify_events"; 
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (
@@ -112,7 +112,7 @@ class Swaptify_Activator
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "post_swap_visitor_types"; 
+        $table_name = $wpdb->prefix . "post_swaptify_visitor_types"; 
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (
@@ -136,14 +136,14 @@ class Swaptify_Activator
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "swap_default_contents"; 
+        $table_name = $wpdb->prefix . "swaptify_default_contents"; 
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            swap_segment_key VARCHAR(64), 
+            segment_key VARCHAR(64), 
             swap_key VARCHAR(64),
-            name VARCHAR(255), 
+            segment_name VARCHAR(255), 
             swap_name VARCHAR(255),
             type VARCHAR(20), 
             content MEDIUMTEXT,
@@ -165,7 +165,7 @@ class Swaptify_Activator
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "swap_cookies"; 
+        $table_name = $wpdb->prefix . "swaptify_cookies"; 
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (

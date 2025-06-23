@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Default content page
  *
@@ -31,8 +33,8 @@
                         <tbody>
                             <?php foreach ($items as $item): ?>
                                 <tr>
-                                    <td><?php echo(esc_html($item->name)); ?></td>
-                                    <td><?php echo(esc_html($item->swap_segment_key)); ?></td>
+                                    <td><?php echo(esc_html($item->segment_name)); ?></td>
+                                    <td><?php echo(esc_html($item->segment_key)); ?></td>
                                     <td><?php echo(esc_html($item->swap_name)); ?></td>
                                     <td><?php echo(esc_html($item->swap_key)); ?></td>
                                     <td>
@@ -52,7 +54,8 @@
                     <div> There is no default content</div>
                 <?php endif; ?>
 
-                <form method="POST" action="/wp-admin/admin-post.php">  
+                <form method="POST" action="/wp-admin/admin-post.php">
+                    <?php wp_nonce_field('default_content', 'default_content'); ?>
                     <?php 
                         settings_fields('swaptify_default_content');
                         do_settings_sections('swaptify_default_content'); 

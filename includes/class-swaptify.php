@@ -268,12 +268,8 @@ class Swaptify
          */
         $this->loader->add_action('wp_ajax_tinymce_get_swaps', $this, 'TinyMCESwapContent');
         $this->loader->add_action('wp_ajax_tinymce_get_segment_types', $this, 'TinyMCESegmentTypes');
-        $this->loader->add_action('wp_ajax_update_swap_content', $this, 'update_swap_content');
-        $this->loader->add_action('wp_ajax_get_available_swaps', $this, 'get_available_swaps');
-        $this->loader->add_action('wp_ajax_add_segment', $this, 'add_segment');
-        $this->loader->add_action('wp_ajax_add_swaps', $this, 'add_swaps');
-        $this->loader->add_filter('mce_buttons_3', $this, 'swap_register_buttons');
-        $this->loader->add_filter('mce_external_plugins', $this, 'swap_register_tinymce_javascript');
+        $this->loader->add_filter('mce_buttons_3', $this, 'swaptify_register_buttons');
+        $this->loader->add_filter('mce_external_plugins', $this, 'swaptify_register_tinymce_javascript');
         
         $this->loader->add_action('add_meta_boxes', $this, 'adminEventsField');
         $this->loader->add_action('add_meta_boxes', $this, 'adminVisitorTypesField');
@@ -435,7 +431,7 @@ class Swaptify
 
         if (in_array($post_type, $types))
         {
-            add_meta_box('swaptify_events', __('Swaptify Page View Events', 'swaptify_plugin'), [$this, 'adminEventFieldContent'], $post_type);
+            add_meta_box('swaptify_events', __('Swaptify Page View Events', 'swaptify'), [$this, 'adminEventFieldContent'], $post_type);
         }
     }
     
@@ -458,7 +454,7 @@ class Swaptify
 
         if (in_array($post_type, $types))
         {
-            add_meta_box('swaptify_visitor_types', __('Swaptify Page Visitor Type', 'swaptify_plugin'), [$this, 'adminVisitorTypeFieldContent'], $post_type);
+            add_meta_box('swaptify_visitor_types', __('Swaptify Page Visitor Type', 'swaptify'), [$this, 'adminVisitorTypeFieldContent'], $post_type);
         }
     }
 
@@ -499,7 +495,7 @@ class Swaptify
             "SELECT 
                 swaptify_event_key AS `key` 
             FROM 
-                {$wpdb->prefix}post_swap_events         
+                {$wpdb->prefix}post_swaptify_events         
             WHERE
                 wp_post_id = %d 
             ",
@@ -569,7 +565,7 @@ class Swaptify
             "SELECT 
                 swaptify_visitor_type_key AS `key` 
             FROM 
-                {$wpdb->prefix}post_swap_visitor_types         
+                {$wpdb->prefix}post_swaptify_visitor_types         
             WHERE
                 wp_post_id = %d 
             ",
@@ -591,160 +587,6 @@ class Swaptify
         }
 
         require_once __DIR__.'/../admin/partials/visitor-types/elements/visitor-type-meta-display.php';
-    }
-    
-    /**
-     * Add a new segment
-     * 
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function add_segment()
-    {
-        /**
-         * get the name and type from the $_POST variable
-         */
-        $name = Swaptify::getVariable($_POST, 'name'); // phpcs:ignore
-        $type = Swaptify::getVariable($_POST, 'type'); // phpcs:ignore
-        
-        $json = [
-            'success' => false,
-        ];;
-    
-        /**
-         * if both segment_key and current_swap_key are set,
-         * send the request to the API for the swap preview
-         */
-        if ($name && $type)
-        {
-            $postSwaps = Swaptify::getVariable($_POST, 'values', []); // phpcs:ignore
-            
-            $swaps = [];
-            
-            foreach ($postSwaps as $swap)
-            {
-                $swaps[] = (object)$swap;
-            }
-            
-            /**
-             * get the data from the API
-             */
-            $data = static::addNewItem($name, $type, 'segments', $swaps);
-            
-            /**
-             * if data is a value and the success property is true, set the data variable
-             */
-            if ($data)
-            {
-                $json['success'] = true;
-                //$json['data'] = $data;
-            }
-        }
-
-        /**
-         * echo the JSON
-         */
-        echo(json_encode($json));
-        
-        /**
-         * exit the script
-         * this is required to terminate immediately and return a proper response
-         */
-        wp_die();
-    }
-    
-    /**
-     * Add new swaps
-     * 
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function add_swaps()
-    {
-        /**
-         * get the name and type from the $_POST variable
-         */
-        $key = Swaptify::getVariable($_POST, 'segmentKey'); // phpcs:ignore
-        
-        $json = [
-            'success' => false,
-        ];
-    
-        /**
-         * if both segment_key and current_swap_key are set,
-         * send the request to the API for the swap preview
-         */
-        if ($key)
-        {
-            $postSwaps = Swaptify::getVariable($_POST, 'values', []); // phpcs:ignore
-            
-            $swaps = [];
-            
-            foreach ($postSwaps as $swap)
-            {
-                $swaps[] = (object)$swap;
-            }
-            
-            /**
-             * get the data from the API
-             */
-            $data = static::addNewSwaps($key, $swaps);
-            
-            /**
-             * if data is a value and the success property is true, set the data variable
-             */
-            if ($data)
-            {
-                $json['success'] = true;
-                //$json['data'] = $data;
-            }
-        }
-
-        /**
-         * echo the JSON
-         */
-        echo(json_encode($json));
-        
-        /**
-         * exit the script
-         * this is required to terminate immediately and return a proper response
-         */
-        wp_die();
-    }
-    
-    /**
-     * Get the available Segments and Swaps, will echo directly in JSON format
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function get_available_swaps()
-    {
-        $json = [
-            'success' => true,
-            'data' => [],
-        ];
-        
-        $data = static::getSegmentsAndSwaps();
-
-        if ($data && isset($data->segments))
-        {
-            $json['data'] = $data->segments;
-        }
-        
-        /**
-         * echo the JSON
-         */
-        echo(json_encode($json));
-        
-        /**
-         * exit the script
-         * this is required to terminate immediately and return a proper response
-         */
-        wp_die();
     }
     
     /**
@@ -923,7 +765,7 @@ class Swaptify
     {
         global $wpdb;
 
-        $table = $wpdb->prefix . 'swap_default_contents';
+        $table = $wpdb->prefix . 'swaptify_default_contents';
         $wpdb->query("TRUNCATE TABLE $table"); // phpcs:ignore
     }
 
@@ -948,12 +790,12 @@ class Swaptify
         global $wpdb;
 
         $insert = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'swap_default_contents', 
+            $wpdb->prefix . 'swaptify_default_contents', 
             [ 
-                'swap_segment_key' => $object->key,
+                'segment_key' => $object->key,
                 'swap_key' => $object->swap_key,
                 'swap_name' => $object->swap_name,
-                'name' => $object->name,
+                'segment_name' => $object->name,
                 'type' => $object->type,
                 'content' => $object->content,
                 'sub_content' => $object->sub_content,
@@ -985,12 +827,12 @@ class Swaptify
          */
         $query = $wpdb->prepare(
             "SELECT 
-                swap_segment_key AS `key`,
+                segment_key AS `key`,
                 content,
                 sub_content,
                 `type`
             FROM 
-                {$wpdb->prefix}swap_default_contents         
+                {$wpdb->prefix}swaptify_default_contents         
             WHERE
                 1 = %d 
             ",
@@ -1155,9 +997,9 @@ class Swaptify
     /**
      * Register shortcodes for swaps
      * shortcodes are:
-     *      swap_segment_image - used for rendering swap content inside an img tag
-     *      swap_segment_url - used for rendering swap content inside an a tag
-     *      swap_segment - used for rendering text/HTML content, will be rendered directly
+     *      swaptify_segment_image - used for rendering swap content inside an img tag
+     *      swaptify_segment_url - used for rendering swap content inside an a tag
+     *      swaptify_segment - used for rendering text/HTML content, will be rendered directly
      * 
      * @since 1.0.0
      *
@@ -1165,9 +1007,9 @@ class Swaptify
      */
     public function registerPublicShortcodes()
     {
-        add_shortcode('swap_segment_image', [$this, 'renderImage']);
-        add_shortcode('swap_segment_url', [$this, 'renderUrl']);
-        add_shortcode('swap_segment', [$this, 'renderText']);
+        add_shortcode('swaptify_segment_image', [$this, 'renderImage']);
+        add_shortcode('swaptify_segment_url', [$this, 'renderUrl']);
+        add_shortcode('swaptify_segment', [$this, 'renderText']);
     }
     
     /**
@@ -2352,13 +2194,13 @@ class Swaptify
          
         /**
          * the pattern to match shortcodes for:
-         *      swap_segment
-         *      swap_segment_image
-         *      swap_segment_url
+         *      swaptify_segment
+         *      swaptify_segment_image
+         *      swaptify_segment_url
          * 
          * Will get the key attribute that is the segment key
          */
-        $pattern = '/(\[swap_segment)(_image|_url)*(\s.*key=")+([\-a-zA-Z0-9]+)("\.*)/';
+        $pattern = '/(\[swaptify_segment)(_image|_url)*(\s.*key=")+([\-a-zA-Z0-9]+)("\.*)/';
 
         preg_match_all($pattern, $content, $keys);
         
@@ -2391,7 +2233,7 @@ class Swaptify
          * purge existing post segments
          */
         $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_segments',
+            $wpdb->prefix . 'post_swaptify_segments',
             [
                 'wp_post_id' => $post_ID,
             ]
@@ -2401,7 +2243,7 @@ class Swaptify
          * purge current revision existing post segments
          */
         $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_segments',
+            $wpdb->prefix . 'post_swaptify_segments',
             [
                 'wp_post_id' => $last_id,
             ]
@@ -2413,48 +2255,51 @@ class Swaptify
         foreach ($segments as $segment)
         {
             $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->prefix . 'post_swap_segments', 
+                $wpdb->prefix . 'post_swaptify_segments', 
                 [ 
                     'wp_post_id' => $post_ID,
-                    'swap_segment_key' => $segment,
+                    'segment_key' => $segment,
                 ]
             );
             
             $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->prefix . 'post_swap_segments', 
+                $wpdb->prefix . 'post_swaptify_segments', 
                 [ 
                     'wp_post_id' => $last_id,
-                    'swap_segment_key' => $segment,
+                    'segment_key' => $segment,
                 ]
             );
         }
 
-        /**
-         * purge events for post and revision
-         */
-        $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_events',
-            [
-                'wp_post_id' => $post_ID,
-            ]
-        );
-        
-        $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_events',
-            [
-                'wp_post_id' => $last_id,
-            ]
-        );
 
         /**
          * if events are passed, add them to the post and revision
          */
-        if (isset($_POST['swap_events'])) // phpcs:ignore
+        if (isset($_POST['meta_page_events'])  && wp_verify_nonce(sanitize_key($_POST['meta_page_events']), 'meta_page_events') )
         {
             /**
-             * confirm swap_events is an array
+             * purge events for post and revision
              */
-            $events = Swaptify::getVariable($_POST, 'swap_events',[]); // phpcs:ignore
+            $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prefix . 'post_swaptify_events',
+                [
+                    'wp_post_id' => $post_ID,
+                ]
+            );
+            
+            $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prefix . 'post_swaptify_events',
+                [
+                    'wp_post_id' => $last_id,
+                ]
+            );
+            
+            /**
+             * confirm swaptify_events is an array
+             */
+            $events = isset($_POST['swaptify_events']) && is_array($_POST['swaptify_events']) ? $_POST['swaptify_events'] : [];
+            
+            $events = array_map('sanitize_key', $events);
             
             if (!is_array($events))
             {
@@ -2463,12 +2308,12 @@ class Swaptify
             
             /**
              * loop over all the events, should be a event key, 
-             * insert into swap_events table for both post and revision 
+             * insert into swaptify_events table for both post and revision 
              */
             foreach ($events as $event)
             {
                 $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                    $wpdb->prefix . 'post_swap_events', 
+                    $wpdb->prefix . 'post_swaptify_events', 
                     [ 
                         'wp_post_id' => $post_ID,
                         'swaptify_event_key' => $event,
@@ -2476,7 +2321,7 @@ class Swaptify
                 );
                 
                 $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                    $wpdb->prefix . 'post_swap_events', 
+                    $wpdb->prefix . 'post_swaptify_events', 
                     [ 
                         'wp_post_id' => $last_id,
                         'swaptify_event_key' => $event,
@@ -2485,47 +2330,50 @@ class Swaptify
             }
         }
         
-        /**
-         * purge visitor_type for post and revision
-         */
-        $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_visitor_types',
-            [
-                'wp_post_id' => $post_ID,
-            ]
-        );
-        
-        $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->prefix . 'post_swap_visitor_types',
-            [
-                'wp_post_id' => $last_id,
-            ]
-        );
-
-        /**
-         * if visitor_type is passed, add them to the post and revision
-         */
-        if (isset($_POST['swap_visitor_type'])) // phpcs:ignore
+        if (isset($_POST['meta_page_visitor_types'])  && wp_verify_nonce(sanitize_key($_POST['meta_page_visitor_types']), 'meta_page_visitor_types') )
         {
-            $visitor_type = Swaptify::getVariable($_POST, 'swap_visitor_type', null); // phpcs:ignore
+            /**
+             * purge visitor_type for post and revision
+             */
+            $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prefix . 'post_swaptify_visitor_types',
+                [
+                    'wp_post_id' => $post_ID,
+                ]
+            );
             
-            if ($visitor_type)
+            $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prefix . 'post_swaptify_visitor_types',
+                [
+                    'wp_post_id' => $last_id,
+                ]
+            );
+
+            /**
+             * if visitor_type is passed, add them to the post and revision
+             */
+            if (isset($_POST['swaptify_visitor_type']))
             {
-                $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                    $wpdb->prefix . 'post_swap_visitor_types', 
-                    [ 
-                        'wp_post_id' => $post_ID,
-                        'swaptify_visitor_type_key' => $visitor_type,
-                    ]
-                );
+                $visitor_type = isset($_POST['swaptify_visitor_type']) && sanitize_key($_POST['swaptify_visitor_type']) ? sanitize_key($_POST['swaptify_visitor_type']) : null;
                 
-                $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                    $wpdb->prefix . 'post_swap_visitor_types', 
-                    [ 
-                        'wp_post_id' => $last_id,
-                        'swaptify_visitor_type_key' => $visitor_type,
-                    ]
-                );
+                if ($visitor_type)
+                {
+                    $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                        $wpdb->prefix . 'post_swaptify_visitor_types', 
+                        [ 
+                            'wp_post_id' => $post_ID,
+                            'swaptify_visitor_type_key' => $visitor_type,
+                        ]
+                    );
+                    
+                    $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                        $wpdb->prefix . 'post_swaptify_visitor_types', 
+                        [ 
+                            'wp_post_id' => $last_id,
+                            'swaptify_visitor_type_key' => $visitor_type,
+                        ]
+                    );
+                }
             }
         }
         
@@ -2571,11 +2419,11 @@ class Swaptify
         {
             $query = $wpdb->prepare(
                 "UPDATE 
-                    {$wpdb->prefix}post_swap_segments         
+                    {$wpdb->prefix}post_swaptify_segments         
                 SET 
                     `active` = %d
                 WHERE
-                    swap_segment_key = %s
+                    segment_key = %s
                     AND (wp_post_id = %d OR wp_post_id = %d) 
                 ",
                 [
@@ -2630,7 +2478,7 @@ class Swaptify
         /**
          * echo the JSON
          */
-        echo(json_encode($json));
+        echo(wp_json_encode($json));
         
         /**
          * exit the script
@@ -2664,7 +2512,7 @@ class Swaptify
         /**
          * echo the JSON
          */
-        echo(json_encode($json));
+        echo(wp_json_encode($json));
         
         /**
          * exit the script
@@ -2683,7 +2531,7 @@ class Swaptify
      * 
      * @return array
      */
-    public function swap_register_buttons($buttons) 
+    public function swaptify_register_buttons($buttons) 
     {
         array_push($buttons, 'separator', 'swaptify');
         return $buttons;
@@ -2698,7 +2546,7 @@ class Swaptify
      * 
      * @return array
      */
-    public function swap_register_tinymce_javascript($plugin_array) 
+    public function swaptify_register_tinymce_javascript($plugin_array) 
     {
         
         $plugin_array['swaptify'] = plugins_url('/js/tinymce-plugin.js',__FILE__ );
@@ -2719,9 +2567,9 @@ class Swaptify
     public static function userData($pageUrl = null)
     {
         $userData = [
-                'referrer' => isset($_SERVER['HTTP_REFERER']) ? wp_unslash($_SERVER['HTTP_REFERER']) : null, // phpcs:ignore
-                'ip' => isset($_SERVER['REMOTE_ADDR']) ? wp_unslash($_SERVER['REMOTE_ADDR']) : null, // phpcs:ignore
-                'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? wp_unslash($_SERVER['HTTP_USER_AGENT']) :  null, // phpcs:ignore
+                'referrer' => isset($_SERVER['HTTP_REFERER']) ? sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) : null, // phpcs:ignore
+                'ip' => isset($_SERVER['REMOTE_ADDR']) ? rest_is_ip_address($_SERVER['REMOTE_ADDR']) : null, // phpcs:ignore
+                'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) :  null, // phpcs:ignore
                 'timezone' => 'America/Detroit',
             ];
             
@@ -2748,7 +2596,7 @@ class Swaptify
             "SELECT 
                 `name`
             FROM 
-                {$wpdb->prefix}swap_cookies         
+                {$wpdb->prefix}swaptify_cookies         
             WHERE
                 1 = %d 
             ",
@@ -2767,7 +2615,7 @@ class Swaptify
             if (isset($_COOKIE[$cookie->name]))
             {
                 $object = new stdClass();
-                $object->{$cookie->name} = $_COOKIE[$cookie->name]; // phpcs:ignore
+                $object->{$cookie->name} = sanitize_key(wp_unslash($_COOKIE[$cookie->name])); // phpcs:ignore
                 
                 $userData['cookies'][] = $object;            
             }
@@ -2815,10 +2663,10 @@ class Swaptify
          */
         $query = $wpdb->prepare(
             "SELECT 
-                swap_segment_key AS `key`,
+                segment_key AS `key`,
                 `active` AS `active`
             FROM 
-                {$wpdb->prefix}post_swap_segments         
+                {$wpdb->prefix}post_swaptify_segments         
             WHERE
                 wp_post_id = %d 
             ",
@@ -2839,7 +2687,7 @@ class Swaptify
             "SELECT 
                 swaptify_event_key AS `key`
             FROM 
-                {$wpdb->prefix}post_swap_events       
+                {$wpdb->prefix}post_swaptify_events       
             WHERE
                 wp_post_id = %d 
             ",
@@ -2860,7 +2708,7 @@ class Swaptify
             "SELECT 
                 swaptify_visitor_type_key AS `key`
             FROM 
-                {$wpdb->prefix}post_swap_visitor_types       
+                {$wpdb->prefix}post_swaptify_visitor_types       
             WHERE
                 wp_post_id = %d 
             ",
@@ -2949,11 +2797,11 @@ class Swaptify
         
         if (!empty($_SERVER['REQUEST_URI'])) // phpcs:ignore
         {
-            $is_ajax_request = (strpos($_SERVER['REQUEST_URI'], $pagesajax) !== false); // phpcs:ignore
+            $is_ajax_request = (strpos(sanitize_url($_SERVER['REQUEST_URI']), $pagesajax) !== false); // phpcs:ignore
             
             if (!$is_ajax_request)
             {
-                $is_ajax_request = (strpos($_SERVER['REQUEST_URI'], $postsajax) !== false); // phpcs:ignore
+                $is_ajax_request = (strpos(sanitize_url($_SERVER['REQUEST_URI']), $postsajax) !== false); // phpcs:ignore
             }
         }
         
@@ -3755,150 +3603,9 @@ class Swaptify
      */
     public static function visitorCookie()
     {
-        return isset($_COOKIE[static::$cookieName]) ? $_COOKIE[static::$cookieName] : null; // phpcs:ignore
+        return isset($_COOKIE[static::$cookieName]) ? sanitize_key(wp_unslash($_COOKIE[static::$cookieName])) : null; // phpcs:ignore
     }
-    
-    /**
-     * Send Swap data to Swaptify for saving
-     * 
-     * @todo this might be old/unused
-     * 
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function update_swap_content()
-    {
-        if (!isset($_POST['update_swaps']) || !wp_verify_nonce(sanitize_key($_POST['update_swaps']), 'update_swaps')) {
-            echo('Invalid submission');
-            exit;
-        }
-        $responseJson = [
-            'success' => false,
-            'message' => '',
-            'errors' => [], // this will be for errors related to the content, will be an array
-            'new_key' => null, // a new key for the swap will be generated upon success
-        ];
-        
-        $segmentKey = Swaptify::getVariable($_POST, 'segmentKey'); // phpcs:ignore
-        $contentKey = Swaptify::getVariable($_POST, 'contentKey'); // phpcs:ignore
-        $contentName = Swaptify::getVariable($_POST, 'contentName'); // phpcs:ignore
-        $contentData = Swaptify::getVariable($_POST, 'contentData'); // phpcs:ignore
-        $contentSubdata = Swaptify::getVariable($_POST, 'contentSubdata'); // phpcs:ignore
-        
-        /**
-         * if Swaptify is not enabled, return false and do nothing
-         */
-        if (!static::enabled())
-        {
-            $responseJson['message'] = 'Swaptify not enabled';
-            echo(json_encode($responseJson));
-            wp_die();
-        }
-        
-        /**
-         * check for the connection, if not set, return false and do nothing
-         */
-        $connection = static::connect();
-        
-        if (!$connection)
-        {
-            $responseJson['message'] = 'Swaptify not connected';
-            echo(json_encode($responseJson));
-            wp_die();
-        }
-        
-        /**
-         * create the request
-         */
-        $request = new WP_Http();
-        $url = $connection->url . 'swap/edit';
-        
-        $put = static::connectionArgs($connection);
-        
-        $put['method'] = 'PUT';
-        $put['body'] = json_encode([
-                        'property' => $connection->property_key,
-                        'segment' => $segmentKey,
-                        'key' => $contentKey,
-                        'name' => $contentName,
-                        'content' => $contentData,
-                        'sub_content' => $contentSubdata,
-                        'publish' => true, // this could be changed to allow drafts, but not this version
-                    ]);
-        
-                    
-        /**
-         * set the default error message
-         */
-        $responseJson['message'] = 'There was a problem updating the content';
-        try 
-        {
-            /**
-             * execute the request
-             */
-            $response = $request->request($url, $put);
-            
-            if (!is_wp_error($response))
-            {
-                /**
-                 * if there is a response, confirm it contains a body
-                 * if not, return false
-                 */
-                if (is_array($response) && isset($response['body']))
-                {   
-                    $content = (string) $response['body'];
-                    $json = json_decode($content);
-                }
-                
-                
-                if ($json)
-                {
-                    /**
-                     * if JSON is valid and success is true, set the key from the response
-                     */   
-                    if (isset($json->success) && $json->success && isset($json->key))
-                    {
-                        $responseJson['message'] = 'Updated Successfully';
-                        $responseJson['success'] = true;
-                        $responseJson['new_key'] = $json->key;
-                    }
-                    else
-                    {
-                        if (isset($json->message))
-                        {
-                            $responseJson['key'] = $json->key;
-                        }
-                        
-                        if (isset($json->errors))
-                        {
-                            $responseJson['errors'] = $json->errors;
-                        }
-                    }
-                }
-            }
-            
-            /**
-             * otherwise, return false
-             */
-        }
-        catch (Exception $e)
-        {
-            // pass...
-        }
-
-        /**
-         * echo the JSON
-         */
-        echo(json_encode($responseJson));
-        
-        /**
-         * exit the script
-         * this is required to terminate immediately and return a proper response
-         */
-        wp_die();
-    }
-    
+     
     /**
      * Create an HTML div for a given Segment
      *
@@ -4021,19 +3728,10 @@ class Swaptify
         
         return $array;
     }
-    
-    public static function createRequestBodyForCreatingSwaps($postData)
-    {
-        $body = $postData;
-        
-        $json = json_encode($body);
-        
-        return $json;
-    }
-    
+     
     public static function generateDisplayShortcode($type, $key)
     {
-        $name = 'swap_segment';
+        $name = 'swaptify_segment';
         if ($type == 'image' || $type == 'url')
         {
             $name .= '_' . $type;

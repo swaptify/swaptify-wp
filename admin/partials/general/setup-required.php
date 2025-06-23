@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Page for when setup is not complete when access any other page than setup(configuration)
  *

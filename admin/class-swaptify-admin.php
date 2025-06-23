@@ -131,6 +131,7 @@ class Swaptify_Admin
         wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/swaptify-admin.js', ['jquery'], $this->version, false);
         wp_localize_script($this->plugin_name, 'swaptify_image_path', ['swaptify_image_path' => plugin_dir_url(__FILE__)]);
         wp_localize_script($this->plugin_name, 'swaptify_admin_url', ['swaptify_admin_url' => admin_url('')]);
+        wp_localize_script($this->plugin_name, 'swaptify_ajax', ['segment_nonce' => wp_create_nonce('segment_nonce')]);
     }
 
     /**
@@ -144,7 +145,7 @@ class Swaptify_Admin
     {
         $icon = 'dashicons-swaptify';
 
-        add_action('admin_head', [$this, 'swaptify_dashicon']);
+        add_action('admin_print_styles', [$this, 'swaptify_dashicon']);
 
         /**
          * main menu item
@@ -182,7 +183,12 @@ class Swaptify_Admin
         /**
          * check if the tab parameter is passed, otherwise, default to "home"
          */
-        $tab = strtolower(Swaptify::getVariable($_GET, 'tab', 'home'));  // phpcs:ignore
+        if (isset($_GET['tab']) && isset($_GET['tab_nonce']) && !wp_verify_nonce(sanitize_key($_GET['tab_nonce']), 'tab')) {
+            echo('Invalid request');
+            exit;
+        }
+        
+        $tab = isset($_GET['tab']) ? strtolower(sanitize_key($_GET['tab'])) : 'home';
         
         /**
          * the tab links are defined here with
@@ -232,16 +238,7 @@ class Swaptify_Admin
      * @return void
      */
     public function adminConfigurationPage() 
-    {
-        // set this var to be used in the settings-display view
-        $active_tab = Swaptify::getVariable($_GET, 'tab', 'general'); // phpcs:ignore
-        
-        if(isset($_GET['error_message'])) // phpcs:ignore
-        {
-            add_action('admin_notices', [$this,'configurationErrorMessage']);
-            do_action('admin_notices');
-        }
-        
+    {      
         $propertyKey = get_option('swaptify_property_key');
         /**
          * $propertySet is used in the partial file below
@@ -251,9 +248,35 @@ class Swaptify_Admin
         if ($propertyKey)
         {
             $propertySet = true;
+            
+            add_action( 'admin_enqueue_scripts', [$this, 'configurationScripts'] );
+            do_action( 'admin_enqueue_scripts' );
+
         }
         
         require_once 'partials/configuration/index.php';
+    }
+    
+    /**
+     * register javascript for configuration page
+     *
+     * @return void
+     */
+    public function configurationScripts()
+    {
+        wp_register_script($this->plugin_name . '-configuration-script', plugin_dir_url(__FILE__) . 'js/configuration.js', ['jquery'], $this->version, false);
+        wp_enqueue_script($this->plugin_name . '-configuration-script'); 
+    }
+    
+    /**
+     * register javascript for shortcode segment creation/editing
+     *
+     * @return void
+     */
+    public function shortcodeScripts()
+    {
+        wp_register_script($this->plugin_name . '-shortcode-script', plugin_dir_url(__FILE__) . 'js/shortcode.js', ['jquery'], $this->version, false);
+        wp_enqueue_script($this->plugin_name . '-shortcode-script'); 
     }
     
     /**
@@ -274,31 +297,31 @@ class Swaptify_Admin
         /**
          * check for error or success messages
          */
-        if(isset($_GET['error_message'])) // phpcs:ignore
+        if (isset($_GET['success']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce'))
         {
-            add_action('admin_notices', [$this,'defaultContentErrorMessage']);
-            do_action('admin_notices');
-        }
-        elseif (isset($_GET['success'])) // phpcs:ignore
-        {
-            add_action('admin_notices', [$this,'defaultContentSuccessMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Default content updated successfully',
+                'success'
+            );
             do_action('admin_notices');
         }
         
         /**
-         * query the database on the {$wpdb->prefix}swap_default_contents table
+         * query the database on the {$wpdb->prefix}swaptify_default_contents table
          */
         $query = $wpdb->prepare(
             "SELECT 
-                swap_segment_key,
+                segment_key,
                 swap_key,
-                name,
+                segment_name,
                 swap_name,
                 type,
                 content,
                 sub_content
             FROM 
-                {$wpdb->prefix}swap_default_contents
+                {$wpdb->prefix}swaptify_default_contents
             WHERE 
                 1 = %d
             ",
@@ -350,19 +373,26 @@ class Swaptify_Admin
          * otherwise, check if the save_message is passed.
          * if so, display the save message
          */
-        if(isset($_GET['error_message'])) // phpcs:ignore
+        if (isset($_GET['error_message'])  && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
-            /**
-             * if any error message is set, display the main error
-             */
-            add_action('admin_notices', [$this,'eventSettingsErrorMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Error adding Event',
+                'error'
+            );
             
             /**
              * if there is an error on the name field
              */
             if (isset($_GET['name_error'])) // phpcs:ignore
             {
-                add_action('admin_notices', [$this,'eventSettingsNameErrorMessage']);
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Event name is required',
+                    'error'
+                );
             }
             
             /**
@@ -370,17 +400,27 @@ class Swaptify_Admin
              */
             if (isset($_GET['type_error'])) // phpcs:ignore
             {
-                add_action('admin_notices', [$this,'eventSettingsTypeErrorMessage']);
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Event type is required',
+                    'error'
+                );
             }
             
             do_action('admin_notices');
         }
-        elseif (isset($_GET['save_message'])) // phpcs:ignore
+        elseif (isset($_GET['save_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
             /**
              * if the success message is set, display the success message
              */
-            add_action('admin_notices', [$this,'eventAddedMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Event added successfully',
+                'success'
+            );
             
             do_action('admin_notices');
         }
@@ -426,42 +466,54 @@ class Swaptify_Admin
          * otherwise, check if the save_message is passed.
          * if so, display the save message
          */
-        if(isset($_GET['error_message'])) // phpcs:ignore
+        if (isset($_GET['error_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
             /**
              * if any error message is set, display the main error
              */
-            add_action('admin_notices', [$this,'cookiesErrorMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Please complete the form',
+                'error'
+            );
             
             /**
              * if there is an error on the name field
              */
             if (isset($_GET['name_error'])) // phpcs:ignore
             {
-                add_action('admin_notices', [$this,'cookiesNameErrorMessage']);
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Cookie name is required',
+                    'error'
+                );
             }
             
             do_action('admin_notices');
         }
-        elseif (isset($_GET['save_message'])) // phpcs:ignore
+        elseif (isset($_GET['save_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
-            /**
-             * if the success message is set, display the success message
-             */
-            add_action('admin_notices', [$this,'cookiesAddedMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Cookie added successfully',
+                'success'
+            );
             
             do_action('admin_notices');
         }
         
         /**
-         * query the database on the {$wpdb->prefix}swap_cookies table
+         * query the database on the {$wpdb->prefix}swaptify_cookies table
          */
         $query = $wpdb->prepare(
             "SELECT 
                 `id`,
                 `name`
             FROM 
-                {$wpdb->prefix}swap_cookies
+                {$wpdb->prefix}swaptify_cookies
             WHERE 
                 1 = %d
             ",
@@ -491,36 +543,72 @@ class Swaptify_Admin
     
     public function adminShortcodeGeneratorPage()
     {
-        
         global $wpdb;
         
         $swaptify = new Swaptify();
         
-        if(isset($_GET['error_message'])) // phpcs:ignore
+        if (isset($_GET['error_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce'))
         {
-            /**
-             * if any error message is set, display the main error
-             */
-            $this->_message = sanitize_text_field(wp_unslash($_GET['error_message'])); // phpcs:ignore
-            add_action('admin_notices', [$this,'shortcodeGeneratorErrorMessage']);
+            if ($_GET['error_message'] != '1') {
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    sanitize_text_field(wp_unslash($_GET['error_message'])),
+                    'error'
+                );
+            }
             
+            if (isset($_GET['name_error'])) {
+                
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Segment name required',
+                    'error'
+                );
+            }
+            
+            if (isset($_GET['type_error'])) {
+                
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Segment type required',
+                    'error'
+                );
+            }
+            
+            if (isset($_GET['general_error'])) {
+                
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Unable to add Segment',
+                    'error'
+                );
+            }
+ 
             do_action('admin_notices');
-        }
-        elseif (isset($_GET['save_message'])) // phpcs:ignore
+            
+        } 
+        elseif (isset($_GET['save_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
             /**
              * if the success message is set, display the success message
              */
-            $this->_message = sanitize_text_field(wp_unslash($_GET['save_message'])); // phpcs:ignore
-            add_action('admin_notices', [$this,'shortcodeGeneratorSuccessMessage']);
-            
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                sanitize_text_field(wp_unslash($_GET['save_message'])),
+                'success'
+            );
             do_action('admin_notices');
         }
         
         $connect = $swaptify::connect();
+        
         if ($connect)
         {
-            
             $visitorTypesResponse = $swaptify->getVisitorTypes();
             
             $visitor_types = new stdClass();
@@ -530,8 +618,8 @@ class Swaptify_Admin
                 $visitor_types = $visitorTypesResponse;
             }
             
-            
             $segmentResponse = $swaptify->getSegmentsAndSwaps(false, true, true);
+            
             if (isset($segmentResponse->success) && $segmentResponse->success && isset($segmentResponse->segments))
             {
                 $segments = $segmentResponse->segments;
@@ -541,7 +629,10 @@ class Swaptify_Admin
                 $segments = new stdClass();
             }
             
-            $key = Swaptify::getVariable($_GET, 'key'); // phpcs:ignore
+            /**
+             * if the segment key is set and the nonce is verified, set the key
+             */
+            $key = isset($_GET['key']) && isset($_GET['segment_nonce']) && wp_verify_nonce(sanitize_key($_GET['segment_nonce']), 'segment_nonce') ? sanitize_key($_GET['key']) : null;
             
             if ($key && isset($segments->$key))
             {
@@ -551,6 +642,10 @@ class Swaptify_Admin
                 wp_enqueue_media();
                 wp_enqueue_editor();
                 $segment = $segments->$key;
+                
+                add_action( 'admin_enqueue_scripts', [$this, 'shortcodeScripts'] );
+                do_action( 'admin_enqueue_scripts' );
+                
                 require_once 'partials/shortcode-generator/segment.php';
             }
             else
@@ -588,35 +683,54 @@ class Swaptify_Admin
          * otherwise, check if the save_message is passed.
          * if so, display the save message
          */
-        if(isset($_GET['error_message'])) // phpcs:ignore
+        if (isset($_GET['error_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
             /**
              * if any error message is set, display the main error
              */
-            add_action('admin_notices', [$this,'visitorTypeErrorMessage']);
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Please complete the form',
+                'error'
+            );
             
             /**
              * if there is an error on the name field
              */
             if (isset($_GET['name_error'])) // phpcs:ignore
             {
-                add_action('admin_notices', [$this,'visitorTypeNameErrorMessage']);
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Visitor Type name is required',
+                    'error'
+                );
             }
             
             if (isset($_GET['unable_to_add'])) // phpcs:ignore
             {
-                add_action('admin_notices', [$this,'visitorTypeFailedToAddErrorMessage']);
+                add_settings_error(
+                    'swaptify-message',
+                    'swaptify-message',
+                    'Unable to add Visitor Type',
+                    'error'
+                );
             }
 
             do_action('admin_notices');
         }
-        elseif (isset($_GET['save_message'])) // phpcs:ignore
+        elseif (isset($_GET['save_message']) && isset($_GET['_nonce']) && wp_verify_nonce(sanitize_key($_GET['_nonce']), '_nonce')) // phpcs:ignore
         {
             /**
              * if the success message is set, display the success message
              */
-            add_action('admin_notices', [$this,'visitorTypeAddedMessage']);
-            
+            add_settings_error(
+                'swaptify-message',
+                'swaptify-message',
+                'Visitor Type added successfully',
+                'success'
+            );
             do_action('admin_notices');
         }
         
@@ -882,192 +996,6 @@ class Swaptify_Admin
         
         echo($input); // phpcs:ignore
     }
-
-    /**
-     * PAGE MESSAGE FUNCTIONS 
-     */
-    
-    /**
-     * Display the error message for inability to save config settings
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function configurationErrorMessage()
-    {
-        $this->displayMessage('There was an error adding updating settings. Please try again.', 'error');
-    }
-    
-    /**
-     * Display the error message for issue updating default content
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function defaultContentErrorMessage()
-    {
-        $this->displayMessage('There was an error updating default content. Please try again.', 'error');
-    }
-    
-    /**
-     * Display the success message for updating default content
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function defaultContentSuccessMessage()
-    {
-        $this->displayMessage('Default content updated successfully', 'success');
-    }
-    
-    /**
-     * Display the general error for incomplete new event form
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function eventSettingsErrorMessage()
-    {
-        $this->displayMessage('Please complete the form', 'error');
-    }
-    
-    /**
-     * Display the error message for missing name
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function eventSettingsNameErrorMessage()
-    {
-        $this->displayMessage('Event name is required', 'error', 'event_name');
-    }
-    
-    /**
-     * Display the error message for invalid event type
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function eventSettingsTypeErrorMessage()
-    {
-        $this->displayMessage('Invalid event type', 'error', 'event_type');
-    }
-    
-    /**
-     * Display the event added successfully message
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function eventAddedMessage()
-    {
-        $this->displayMessage('Event added successfully', 'success');
-    }
-    
-    /**
-     * Display the general error for incomplete new event form
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function cookiesErrorMessage()
-    {
-        $this->displayMessage('Please complete the form', 'error');
-    }
-    
-    /**
-     * Display the error message for missing name
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function cookiesNameErrorMessage()
-    {
-        $this->displayMessage('Name is required', 'error', 'cookie_name');
-    }
-    
-    /**
-     * Display the event added successfully message
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function cookiesAddedMessage()
-    {
-        $this->displayMessage('Added successfully', 'success');
-    }
-    
-    
-    /**
-     * Display the general error for incomplete new visitor type form
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function visitorTypeErrorMessage()
-    {
-        $this->displayMessage('Please complete the form', 'error');
-    }
-    
-    /**
-     * Display the error message for missing name
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function visitorTypeNameErrorMessage()
-    {
-        $this->displayMessage('Visitor Type name is required', 'error', 'visitor_type_name');
-    }
-    
-    /**
-     * Display the error message for being unable to add visitor type
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function visitorTypeFailedToAddErrorMessage()
-    {
-        $this->displayMessage('Unable to add Visitor Type', 'error', 'visitor_type_name');
-    }
-    
-    /**
-     * Display the event added successfully message
-     *
-     * @since 1.0.0
-     * 
-     * @return void
-     */
-    public function visitorTypeAddedMessage()
-    {
-        $this->displayMessage('Visitor Type added successfully', 'success');
-    }
-    
-    
-    public function shortcodeGeneratorErrorMessage()
-    {
-        $this->displayMessage($this->_message, 'error');
-    }
-    
-    public function shortcodeGeneratorSuccessMessage()
-    {
-        $this->displayMessage($this->_message, 'success');
-    }
-    
-    
     
     /**
      * 
@@ -1124,8 +1052,8 @@ class Swaptify_Admin
             'swaptify_configuration_settings',
             'swaptify_account_token',
             array(
-                'default' => '',
-                'sanitize_callback' => null,
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_textarea_field',
             ),
         );
         
@@ -1169,8 +1097,8 @@ class Swaptify_Admin
                 'swaptify_configuration_settings',
                 'swaptify_property_key',
                 [
-                    'default' => '',
-                    'sanitize_callback' => null,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
             );
             
@@ -1211,8 +1139,8 @@ class Swaptify_Admin
                 'swaptify_configuration_settings',
                 $fieldName,
                 [
-                    'default' => '',
-                    'sanitize_callback' => null,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_key',
                 ],
            );
         }
@@ -1260,8 +1188,8 @@ class Swaptify_Admin
             'swaptify_default_content',
             'action',
             [
-                'default' => '',
-                'sanitize_callback' => null,
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
         );
     }
@@ -1397,8 +1325,8 @@ class Swaptify_Admin
             'swaptify_event_settings',
             'action',
             [
-                'default' => '',
-                'sanitize_callback' => null,
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
        );
     }
@@ -1471,8 +1399,8 @@ class Swaptify_Admin
             'swaptify_visitor_types',
             'action',
             [
-                'default' => '',
-                'sanitize_callback' => null,
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
        );
     }
@@ -1570,8 +1498,8 @@ class Swaptify_Admin
             'swaptify_cookies',
             'action',
             [
-                'default' => '',
-                'sanitize_callback' => null,
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
        );
     }
@@ -1591,8 +1519,12 @@ class Swaptify_Admin
      */
     public function admin_update_default_content() 
     {
-        $success = '';
+        if (!isset($_POST['default_content']) || !wp_verify_nonce(sanitize_key($_POST['default_content']), 'default_content')) {
+            echo('Invalid request');
+            exit;
+        }
         
+        $success = '';
         $swaptify = new Swaptify();
         $connect = $swaptify::connect();
 
@@ -1602,7 +1534,7 @@ class Swaptify_Admin
             $success = '&success=1';
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-default-content'.$success));
+        wp_redirect(admin_url('admin.php?page=swaptify-default-content' . $success . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
 
@@ -1634,17 +1566,8 @@ class Swaptify_Admin
             /**
              * check if the fields for name and type are passed
              */
-            $name = Swaptify::getVariable($_POST, 'event_name');
-            $type = Swaptify::getVariable($_POST, 'event_type');
-            $is_terminal = Swaptify::getVariable($_POST, 'is_terminal', []);
-            
-            /**
-             * if terminal is set, create it as a single element array
-             */
-            if ($is_terminal)
-            {
-                $is_terminal = [true];
-            }
+            $name = isset($_POST['event_name']) ? sanitize_text_field(wp_unslash($_POST['event_name'])) : null;
+            $type = isset($_POST['event_type']) ? sanitize_text_field(wp_unslash($_POST['event_type'])) : null;
             
             /**
              * get the valid event types from the API
@@ -1671,23 +1594,9 @@ class Swaptify_Admin
             /**
              * if the type is not set, add the error
              */
-            if (!$type)
+            if (!$type || !in_array($type, $availableTypes))
             {
                 $error_messages[] = 'type_error=1';
-            }
-            else
-            {
-                /**
-                 * if the type is not in the available types array, add the error
-                 */
-                if (in_array($type, $availableTypes))
-                {
-                    // good
-                }
-                else
-                {
-                    $error_messages[] = 'Type+not+found';
-                }
             }
             
             /**
@@ -1695,7 +1604,7 @@ class Swaptify_Admin
              */
             if (count($error_messages) == 0)
             {
-                $success = $swaptify->addNewItem($name, $type, 'events', $is_terminal);
+                $success = $swaptify->addNewItem($name, $type, 'events');
             }
         }
 
@@ -1711,10 +1620,10 @@ class Swaptify_Admin
         }
         elseif ($success)
         {
-            $error_string = '&save_message=New+event+added';
+            $error_string = '&save_message=1';
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-event-settings' . $error_string));
+        wp_redirect(admin_url('admin.php?page=swaptify-event-settings' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
 
@@ -1734,39 +1643,39 @@ class Swaptify_Admin
         $error_messages = [];
         $success = false;
 
-            /**
-             * check if the fields for name and type are passed
-             */
-            $name = Swaptify::getVariable($_POST, 'cookie_name'); // phpcs:ignore
-            
-            /**
-             * replace spaces with underscores. 
-             */
-            $name = str_replace(' ', '_', $name);
-            /**
-             * if the name is not set, add the error
-             */
-            if (!$name)
-            {
-                $error_messages[] = 'name_error=1';
-            }
-            
-            /**
-             * if there are no errors in the error_messages array, save the new event
-             */
-            if (count($error_messages) == 0)
-            {
-                global $wpdb;
+        /**
+         * check if the fields for name and type are passed
+         */
+        $name = isset($_POST['cookie_name']) ? sanitize_text_field(wp_unslash($_POST['cookie_name'])) : null;
+        
+        /**
+         * replace spaces with underscores. 
+         */
+        $name = str_replace(' ', '_', $name);
+        /**
+         * if the name is not set, add the error
+         */
+        if (!$name)
+        {
+            $error_messages[] = 'name_error=1';
+        }
+        
+        /**
+         * if there are no errors in the error_messages array, save the new event
+         */
+        if (count($error_messages) == 0)
+        {
+            global $wpdb;
 
-                $insert = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                    $wpdb->prefix . 'swap_cookies', 
-                    [ 
-                        'name' => $name
-                    ]
-                );
+            $insert = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prefix . 'swaptify_cookies', 
+                [ 
+                    'name' => $name
+                ]
+            );
 
-                $success = true;
-            }
+            $success = true;
+        }
         
 
         $error_string = '';
@@ -1781,10 +1690,10 @@ class Swaptify_Admin
         }
         elseif ($success)
         {
-            $error_string = '&save_message=New+cookie+added';
+            $error_string = '&save_message=1';
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-cookies' . $error_string));
+        wp_redirect(admin_url('admin.php?page=swaptify-cookies' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
     
@@ -1803,7 +1712,8 @@ class Swaptify_Admin
         
         if ($connect)
         {
-            $segmentKey = Swaptify::getVariable($_POST, 'segment_key'); // phpcs:ignore
+            $segmentKey = isset($_POST['segment_key']) ? sanitize_key($_POST['segment_key']) : null;
+            
             $swapsArray = Swaptify::createArrayForRequestBodyForEditingSwaps($_POST, $segmentKey); // phpcs:ignore
             $newSwapsArray = Swaptify::createArrayForRequestBodyForEditingSwaps($_POST, $segmentKey, true); // phpcs:ignore
 
@@ -1842,38 +1752,40 @@ class Swaptify_Admin
                 if ($error_string != '')
                 {
                     // show the error message
-                    wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . $error_string));
+                    wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
                     exit();
                 }
                 else
                 {
                     $message = urlencode('Swaps saved successfully')    ;
-                    wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&save_message=' . $message));
+                    wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&save_message=' . $message . '&_nonce=' . wp_create_nonce('_nonce')));
                     exit();
                 }
-                
                 
             }
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . urlencode('There was an error saving your Swaps. Please try again')));
+        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . urlencode('There was an error saving your Swaps. Please try again') . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
     
     public function admin_delete_swaptify_swap()
     {
-        
+        if (!isset($_POST['delete_swap']) || !wp_verify_nonce(sanitize_key($_POST['delete_swap']), 'delete_swap')) {
+            echo('Invalid submission');
+            exit;
+        }
         $swaptify = new Swaptify();
         $connect = $swaptify::connect();
 
         if ($connect)
         {
-            $swapKey = Swaptify::getVariable($_POST, 'swap'); // phpcs:ignore
+            $swapKey = isset($_POST['swap']) ? sanitize_text_field(wp_unslash($_POST['swap'])) : null;
             
             if (!$swapKey)
             {
                 $error_string = urlencode('Swap not found');
-                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . $error_string));
+                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
                 exit();
             }
             
@@ -1881,12 +1793,12 @@ class Swaptify_Admin
             
             if ($deleted)
             {
-                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&save_message=' . urlencode('Swap deleted')));
+                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&save_message=' . urlencode('Swap deleted') . '&_nonce=' . wp_create_nonce('_nonce')));
                 exit();
             }
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . urlencode('There was an error deleting a Swap. Please try again')));
+        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . urlencode('There was an error deleting a Swap. Please try again') . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
     
@@ -1896,6 +1808,7 @@ class Swaptify_Admin
             echo('Invalid submission');
             exit;
         }
+        
         $swaptify = new Swaptify();
         $connect = $swaptify::connect();
 
@@ -1903,23 +1816,23 @@ class Swaptify_Admin
         
         if ($connect)
         {
-            $name = Swaptify::getVariable($_POST, 'name'); // phpcs:ignore
-            $type = Swaptify::getVariable($_POST, 'type'); // phpcs:ignore
+            $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : null;
+            $type = isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : null;
             
             if (!$name)
             {
-                $error_messages[] = 'Segment name is required';
+                $error_messages[] = 'name_error=1';
             }
            
             if (!$type)
             {
-                $error_messages[] = 'Segment type is required';
+                $error_messages[] = 'type_error=1';
             }
             
             if (count($error_messages))
             {
-                $error_string = urlencode(implode(', ', $error_messages));
-                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . $error_string));
+                $error_string = '&error_message=' . urlencode('There was a problem creating the Segment') . '&' . implode('&', $error_messages);
+                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
                 exit();
             }
             
@@ -1927,12 +1840,12 @@ class Swaptify_Admin
             
             if ($key)
             {
-                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&key=' . $key));
+                wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&key=' . $key . '&segment_nonce=' . wp_create_nonce('segment_nonce')));
                 exit();
             }
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=' . urlencode('There was an error creating a new Segment. Please try again')));
+        wp_redirect(admin_url('admin.php?page=swaptify-shortcode-generator&error_message=1&general_error=1&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
     
@@ -1964,8 +1877,7 @@ class Swaptify_Admin
             /**
              * check if the fields for name is passed
              */
-            $name = Swaptify::getVariable($_POST, 'visitor_type_name'); // phpcs:ignore
-            
+            $name = isset($_POST['visitor_type_name']) ? sanitize_text_field(wp_unslash($_POST['visitor_type_name'])) : null;
             /**
              * if the name is not set, add the error
              */
@@ -1995,14 +1907,14 @@ class Swaptify_Admin
         }
         elseif ($success)
         {
-            $error_string = '&save_message=New+Visitor+Type+added';
+            $error_string = '&save_message=1';
         }
         else
         {
-            $error_string = '&error_message=1&unable_to_add=failed+to+add+Visitor+Type';
+            $error_string = '&error_message=1&unable_to_add=1';
         }
         
-        wp_redirect(admin_url('admin.php?page=swaptify-visitor-types' . $error_string));
+        wp_redirect(admin_url('admin.php?page=swaptify-visitor-types' . $error_string . '&_nonce=' . wp_create_nonce('_nonce')));
         exit();
     }
 }

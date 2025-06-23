@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Shortcode Generator page
  *
@@ -10,11 +12,7 @@
  * @subpackage swaptify/admin/partials/shortcode-generator
  */
 ?>
-<style>
-    .create-segment-form {
-        margin-top: 20px;
-    }
-</style>
+
 <div class="wrap">
     <div id="icon-themes" class="icon32"></div>  
     <h2>Swaptify Shortcode Generator</h2>  
@@ -35,7 +33,7 @@
                 
             <?php foreach($segments as $key => $segment): ?>
                 <tr>
-                    <td><a href="?page=swaptify-shortcode-generator&key=<?php echo(esc_attr($segment->key)) ?>"><?php echo(esc_html($segment->name)) ?></a></td>
+                    <td><a href="?page=swaptify-shortcode-generator&key=<?php echo(esc_attr($segment->key)) ?>&segment_nonce=<?php echo(esc_attr(wp_create_nonce('segment_nonce'))) ?>"><?php echo(esc_html($segment->name)) ?></a></td>
                     <td><?php echo(esc_html($key)) ?></td>
                     <td><?php echo(esc_html(Swaptify::generateDisplayShortcode($segment->type, $segment->key))) ?></td>
                     <td><?php echo(esc_html($segment->type)) ?></td>
@@ -44,8 +42,8 @@
                             <?php echo(esc_html($swap->name)) ?><br />    
                         <?php endforeach; ?>
                     </td>
-                    <td><a href="?page=swaptify-shortcode-generator&key=<?php echo(esc_attr($segment->key)) ?>">edit</a></td>
-                    <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/segments/<?php echo(esc_url($segment->key)) ?>/edit">delete</a></td>
+                    <td><a href="?page=swaptify-shortcode-generator&key=<?php echo(esc_attr($segment->key)) ?>&segment_nonce=<?php echo(esc_attr(wp_create_nonce('segment_nonce'))) ?>">edit</a></td>
+                    <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/segments/<?php echo(esc_attr($segment->key)) ?>/edit">delete</a></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

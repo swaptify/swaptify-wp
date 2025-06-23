@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Cookies page
  *
@@ -16,7 +18,6 @@
         <h2>Swaptify Cookie Settings</h2>
         <?php settings_errors(); ?>
         <p class="content-wrapper">On this page, you can set which cookies to send to Swaptify as part of visitor data. These cookies can then be used within your Swaptify Rules to control your Swaps. Keep in mind that case matters, i.e. "Swap" is a different cookie name than "swap."</p>
-    </div>
     <?php if ($items): ?>
         <table border="1" cellpadding="20" width="100%">
             <thead>

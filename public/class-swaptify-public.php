@@ -56,6 +56,7 @@ class Swaptify_Public {
         
         add_action('wp_ajax_nopriv_swaptify_visitor_type', array($this, 'set_visitor_type'));
         add_action('wp_ajax_swaptify_visitor_type', array($this, 'set_visitor_type'));
+        
         add_action('wp_ajax_nopriv_swaptify_event', array($this, 'set_event'));
         add_action('wp_ajax_swaptify_event', array($this, 'set_event'));
         
@@ -129,13 +130,17 @@ class Swaptify_Public {
             echo('Invalid submission');
             exit;
         }
+        
         $success = false;
-        $key = Swaptify::getVariable($_POST, 'key');
-        $success = Swaptify::setVisitorType($key);
+        
+        $key = isset($_POST['key']) ? sanitize_key($_POST['key']) : null;
+        
+        if ($key) {   
+            $success = Swaptify::setVisitorType($key);
+        }
         
         if ($success)
         {
-            
             $response = $success;
         }
         else {
@@ -144,7 +149,7 @@ class Swaptify_Public {
             ];
         }
         
-        echo(json_encode($response));
+        echo(wp_json_encode($response));
         exit(1);
     }
     
@@ -162,8 +167,12 @@ class Swaptify_Public {
             exit;
         }
         $success = false;
-        $key = Swaptify::getVariable($_POST, 'key');
-        $success = Swaptify::setEventMet($key);
+        
+        $key = isset($_POST['key']) ? sanitize_key($_POST['key']) : null;
+        
+        if ($key) {
+            $success = Swaptify::setEventMet($key);
+        }
         
         $response = [
             'success' => $success,
@@ -171,7 +180,7 @@ class Swaptify_Public {
             'key' => $key,
         ];
         
-        echo(json_encode($response));
+        echo(wp_json_encode($response));
         exit(1);
     }
     
@@ -189,32 +198,32 @@ class Swaptify_Public {
             exit;
         }
         $data = false;
-        $post_id = Swaptify::getVariable($_POST, 'id');
-        $url = Swaptify::getVariable($_POST, 'url');
+        $post_id = isset($_POST['id']) ? sanitize_key($_POST['id']) : null;
+        $url = isset($_POST['url']) ? sanitize_text_field(wp_unslash($_POST['url'])) : null;
 
         if ($post_id)
         {
-        $data = Swaptify::get($post_id, $url);
+            $data = Swaptify::get($post_id, $url);
         }
 
         if ($data)
         {
-        if ($data->swaps) {
-            foreach ($data->swaps['data'] as $key => $swap) {
-            if ($data->swaps['types'][$key] == 'text') {
-                $data->swaps['data'][$key] = @do_shortcode($swap);
+            if ($data->swaps) {
+                foreach ($data->swaps['data'] as $key => $swap) {
+                    if ($data->swaps['types'][$key] == 'text') {
+                        $data->swaps['data'][$key] = @do_shortcode($swap);
+                    }
+                }
             }
-            }
+
+            $response = [
+                'swaps' => $data->swaps,
+                'visitor_types' => $data->visitor_types,
+                'post_id' => $post_id,
+            ];
         }
 
-        $response = [
-            'swaps' => $data->swaps,
-            'visitor_types' => $data->visitor_types,
-            'post_id' => $post_id,
-        ];
-        }
-
-        echo(json_encode($response));
+        echo(wp_json_encode($response));
         exit(1);
     }
 }

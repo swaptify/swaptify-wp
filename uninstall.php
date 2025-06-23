@@ -60,7 +60,7 @@ class SwaptifyUninstall
     }
     
     /**
-     * remove post_swap_segments table
+     * remove post_swaptify_segments table
      *
      * @since 1.0.0
      * @return void
@@ -69,14 +69,14 @@ class SwaptifyUninstall
     {
         global $wpdb;
     
-        $table_name = $wpdb->prefix . "post_swap_segments"; 
+        $table_name = $wpdb->prefix . "post_swaptify_segments"; 
 
         $sql = "DROP TABLE IF EXISTS $table_name";
         $wpdb->query($sql); // phpcs:ignore
     }
     
     /**
-     * remove post_swap_events table
+     * remove post_swaptify_events table
      * 
      * @since 1.0.0
      * @return void
@@ -85,7 +85,7 @@ class SwaptifyUninstall
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "post_swap_events"; 
+        $table_name = $wpdb->prefix . "post_swaptify_events"; 
 
         $sql = "DROP TABLE IF EXISTS $table_name";
 
@@ -93,7 +93,7 @@ class SwaptifyUninstall
     }
     
     /**
-     * remove post_swap_visitor_types table
+     * remove post_swaptify_visitor_types table
      * 
      * @since 1.0.0
      * @return void
@@ -102,7 +102,7 @@ class SwaptifyUninstall
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "post_swap_visitor_types"; 
+        $table_name = $wpdb->prefix . "post_swaptify_visitor_types"; 
 
         $sql = "DROP TABLE IF EXISTS $table_name";
 
@@ -110,7 +110,7 @@ class SwaptifyUninstall
     }
 
     /**
-     * remove swap_default_contents table
+     * remove swaptify_default_contents table
      * 
      * @since 1.0.0
      * @return void
@@ -119,7 +119,7 @@ class SwaptifyUninstall
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "swap_default_contents"; 
+        $table_name = $wpdb->prefix . "swaptify_default_contents"; 
 
         $sql = "DROP TABLE IF EXISTS $table_name";
 
@@ -127,7 +127,7 @@ class SwaptifyUninstall
     }
     
     /**
-     * remove swap_cookies table
+     * remove swaptify_cookies table
      * 
      * @since 1.0.0
      * @return void
@@ -136,7 +136,7 @@ class SwaptifyUninstall
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . "swap_cookies"; 
+        $table_name = $wpdb->prefix . "swaptify_cookies"; 
 
         $sql = "DROP TABLE IF EXISTS $table_name";
 

@@ -158,7 +158,7 @@
             typeString = '_' + segment.type;
         }
         
-        let shortcode = '[swap_segment' + typeString + ' key="' + key + '" name="' + segment.name.replaceAll('"', "'") + '"]';
+        let shortcode = '[swaptify_segment' + typeString + ' key="' + key + '" name="' + segment.name.replaceAll('"', "'") + '"]';
         
         let html = jQuery('<div>');
         let segmentName = jQuery('<p>').addClass('segment-name').html(segment.name);
@@ -191,7 +191,7 @@
             segmentContent.append(segment.content);
         }
         
-        let segmentEdit = jQuery('<p>').addClass('edit').html('<a href="/wp-admin/admin.php?page=swaptify-shortcode-generator&key=' + key + '" target="_blank">edit</a>');
+        let segmentEdit = jQuery('<p>').addClass('edit').html('<a href="/wp-admin/admin.php?page=swaptify-shortcode-generator&key=' + key + '&segment_nonce=' + swaptify_ajax.segment_nonce + '" target="_blank">edit</a>');
         let shortcodeDiv = jQuery('<div>').addClass('shortcode').append(shortcode);
         
         html.append(segmentEdit);
