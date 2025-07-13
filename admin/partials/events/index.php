@@ -27,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                 <th>Type</th>
                                 <th>Swaptify Key</th>
                                 <th>Code Sample</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -84,6 +85,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     SwaptifyWP.event('<?php echo(esc_html($event->key)); ?>');
 &lt;/script&gt;</code></pre>
                                     </td>
+                                    <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/events/<?php echo(esc_attr($event->key)) ?>/edit">delete</a></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

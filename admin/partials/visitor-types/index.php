@@ -32,6 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                 <th>Swaptify Key</th>
                                 <th>Body Class</th>
                                 <th>Code Sample</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,6 +88,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 &lt;/script&gt;</code></pre>
                                             
                                     </td>
+                                    <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/visitor_types/<?php echo(esc_attr($visitor_type->key)) ?>/edit">delete</a></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

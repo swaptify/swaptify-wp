@@ -110,7 +110,7 @@
         // let segment_types;
         
         jQuery.post(ajaxurl, {
-            action: 'tinymce_get_segment_types'
+            action: 'tinymce_swaptify_get_segment_types'
         }, function(response) {
             segment_types = response.types;
             
@@ -123,7 +123,7 @@
         'json');
         
         jQuery.post( ajaxurl, {
-            action: 'tinymce_get_swaps'
+            action: 'tinymce_swaptify_get_swaps'
         }, function(response) {
             for (segment_key in response.segments)
             {

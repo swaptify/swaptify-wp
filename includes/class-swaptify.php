@@ -59,15 +59,6 @@ class Swaptify
     public static $slugPrefix = 'swaptify-visitor_type-';
     
     /**
-     * Wordpress option name for toggling the plugin usage on the public facing side
-     *
-     * @since 1.0.0
-     * 
-     * @var string
-     */
-    public static $enabledOptionName = 'swaptify_enabled';
-    
-    /**
      * App site URL
      *
      * @since 1.0.0
@@ -266,8 +257,8 @@ class Swaptify
         /**
          * add tinyMCE button AJAX action
          */
-        $this->loader->add_action('wp_ajax_tinymce_get_swaps', $this, 'TinyMCESwapContent');
-        $this->loader->add_action('wp_ajax_tinymce_get_segment_types', $this, 'TinyMCESegmentTypes');
+        $this->loader->add_action('wp_ajax_tinymce_swaptify_get_swaps', $this, 'TinyMCESwapContent');
+        $this->loader->add_action('wp_ajax_tinymce_swaptify_get_segment_types', $this, 'TinyMCESegmentTypes');
         $this->loader->add_filter('mce_buttons_3', $this, 'swaptify_register_buttons');
         $this->loader->add_filter('mce_external_plugins', $this, 'swaptify_register_tinymce_javascript');
         
@@ -377,7 +368,7 @@ class Swaptify
      */
     public static function enabledValue()
     {
-        $value = get_option(static::$enabledOptionName);
+        $value = get_option('swaptify_enabled');
         
         /**
          * if the option value is exactly false, set it to 1
@@ -2841,16 +2832,6 @@ class Swaptify
         }
         
         /**
-         * check if the connection is setup, if not, return false
-         */
-        $connection = static::connect();
-        
-        if (!$connection)
-        {
-            return false;
-        }
-        
-        /**
          * set the key_data array. This is what is ultimately returned
          */
         $key_data = [];
@@ -2869,6 +2850,17 @@ class Swaptify
          */
         if (!static::enabled())
         {    
+            $key_data = static::getDefaultContent($keys);
+            return $key_data;
+        }
+        
+        /**
+         * check if the connection is setup, if not, return false
+         */
+        $connection = static::connect();
+        
+        if (!$connection)
+        {
             $key_data = static::getDefaultContent($keys);
             return $key_data;
         }
@@ -3209,11 +3201,11 @@ class Swaptify
             if ($content)
             {
                 return '<a 
-                            href="'.$content.'"
-                            id="' . $id . '"
+                            href="'.esc_url($content).'"
+                            id="' . esc_attr($id) . '"
                             class="' . $class . '"
                         >
-                        ' . $text . '</a>';
+                        ' . esc_html($text) . '</a>';
             }
         }
     }
@@ -3666,69 +3658,7 @@ class Swaptify
     
         return $div;
     }
-    
-    public static function createArrayForRequestBodyForEditingSwaps($postData, $segmentKey = null, $isNew = false)
-    {
-        $nameKey = $isNew ? 'new_swap_name' : 'swap_name';
-        $visitorTypeNameKey = $isNew ? 'new_visitor_type' : 'visitor_type';
-        $contentKeyPrefix = $isNew ? 'new_content-' : 'content-'; 
-        $subContentKey = $isNew ? 'new_sub_content' : 'sub_content';
-        $publishKey = $isNew ? 'new_publish' : 'publish';
-        $activeKey = $isNew ? 'new_active' : 'active';
         
-        if (!isset($postData[$nameKey]))
-        {
-            return null;
-        }
-        
-        $array = [];
-        
-        $defaultKey = Swaptify::getVariable($postData, 'default'); // phpcs:ignore
-        
-        $visitorTypes = Swaptify::getVariable($postData, $visitorTypeNameKey, []); // phpcs:ignore
-        
-        foreach ($postData[$nameKey] as $swapKey => $name)
-        {
-            $swap = new stdClass();
-            $swap->segment_key = $segmentKey;
-            /**
-             * if the action is not for new swaps, don't include the swap key as it is going to be for creating new ones
-             */
-            if (!$isNew)
-            {
-                $swap->swap_key = $swapKey;
-            }
-            
-            $swap->name = Swaptify::getVariable($postData[$nameKey], $swapKey, null); // phpcs:ignore
-            $swap->content = Swaptify::getVariable($postData, $contentKeyPrefix . $swapKey, ''); // phpcs:ignore
-            
-            if (isset($postData[$subContentKey])) {
-                $swap->sub_content = Swaptify::getVariable($postData[$subContentKey], $swapKey, null); // phpcs:ignore                
-            } else {
-                $swap->sub_content = null;
-            }
-            
-            $swap->publish = Swaptify::getVariable($postData[$publishKey], $swapKey, false) ? true : false; // phpcs:ignore
-            $swap->active = Swaptify::getVariable($postData[$activeKey], $swapKey, false) ? true : false; // phpcs:ignore
-            
-            $swap->default = ($swapKey == $defaultKey) ? true : false;
-            
-            $swap->visitor_types = [];
-            foreach($visitorTypes as $visitorTypeKey => $visitorType)
-            {
-                if (isset($visitorType[$swapKey]))
-                {
-                    $swap->visitor_types[] = $visitorTypeKey;
-                }
-            }
-            
-            $array[] = $swap;
-            
-        }
-        
-        return $array;
-    }
-     
     public static function generateDisplayShortcode($type, $key)
     {
         $name = 'swaptify_segment';
@@ -3738,26 +3668,5 @@ class Swaptify
         }
         
         return '[' . $name . ' key="' . $key . '"]';
-    }
-    
-    /**
-     * Get a cleaned version of the $_POST/$_GET variable by key
-     *
-     * @param string $key - the key of the $_POST/$_GET variable
-     * @param null|string|array $default - what will be returned if key is not set
-     * 
-     * @return string|array
-     */
-    public static function getVariable($array, $key, $default = null) 
-    {
-        $variable = isset($array[$key]) ? $array[$key] : $default;
-        
-        if (is_string($variable))
-        {
-            $variable = wp_unslash($variable);
-        }
-        
-        return $variable;
-    }
-    
+    }    
 }

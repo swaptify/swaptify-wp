@@ -40,6 +40,7 @@ const beforeUnloadHandler = (event) => {
     event.returnValue = true;
 };
 
+
 let newSwapId = 1;
 
 jQuery(function(){
@@ -123,7 +124,7 @@ jQuery(function(){
         
         jQuery('#new-swaps').append(div);
         
-        if (div.find('textarea'))
+        if (div.find('textarea').length)
         {
             let content_id = 'new_content-' + newSwapId;
             
@@ -297,7 +298,7 @@ jQuery(function(){
     
     jQuery('label[for*="default"] > input:checked').closest('.swap-div').addClass('default'); //hide visitor types for current default
 
-    jQuery('label[for*="default').click(function(){ //allow default switching
+    jQuery('#edit-swap-form').on('click', 'label[for*="default"]', function(){ //allow default switching
         jQuery('label[for*="default"] > input').closest('.swap-div').removeClass('default');
         jQuery('label[for*="default"] > input:checked').closest('.swap-div').addClass('default');
     });

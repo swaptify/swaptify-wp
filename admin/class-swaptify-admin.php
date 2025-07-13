@@ -97,16 +97,17 @@ class Swaptify_Admin
      * @return void
      */
     public function swaptify_dashicon() {
-        echo '
-            <style>
+        
+        $icon = '
                 .dashicons-swaptify {
                     background-image: url("' . esc_url(plugins_url('images/swaptify-dashicon.png', __FILE__)) . '");
                     background-repeat: no-repeat;
                     background-position: center; 
                     background-size: 22px;
                 }
-            </style>
         '; 
+        
+        wp_add_inline_style($this->plugin_name, $icon);
     }
     
     /**
@@ -1076,7 +1077,7 @@ class Swaptify_Admin
                 'subtype' => 'text',
                 'id'    => 'swaptify_property_key',
                 'name' => 'swaptify_property_key',
-                'required' => true,
+                // 'required' => true,
                 'get_options_list' => '',
                 'value_type'=>'normal',
                 'wp_data' => 'option',
@@ -1108,7 +1109,6 @@ class Swaptify_Admin
             $value = Swaptify::enabledValue();
             
             $options = Swaptify::enabledOptions();
-            $fieldName = Swaptify::$enabledOptionName;
             
             /**
              * build the enabled field
@@ -1116,8 +1116,8 @@ class Swaptify_Admin
             $args = [
                 'type'      => 'select',
                 'subtype' => 'text',
-                'id'    => $fieldName,
-                'name' => $fieldName,
+                'id'    => 'swaptify_enabled',
+                'name' => 'swaptify_enabled',
                 'required' => true,
                 'get_options_list' => '',
                 'value_type'=>'normal',
@@ -1127,7 +1127,7 @@ class Swaptify_Admin
             ];
             
             add_settings_field(
-                $fieldName,
+                'swaptify_enabled',
                 'Enabled',
                 [$this, 'swaptify_render_settings_field'],
                 'swaptify_configuration_settings',
@@ -1137,7 +1137,7 @@ class Swaptify_Admin
 
             register_setting(
                 'swaptify_configuration_settings',
-                $fieldName,
+                'swaptify_enabled',
                 [
                     'type' => 'string',
                     'sanitize_callback' => 'sanitize_key',
@@ -1182,15 +1182,6 @@ class Swaptify_Admin
             'swaptify_default_content',
             'swaptify_default_content_section',
             $args
-        );
-
-        register_setting(
-            'swaptify_default_content',
-            'action',
-            [
-                'type' => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ],
         );
     }
     
@@ -1320,15 +1311,6 @@ class Swaptify_Admin
             'swaptify_event_settings_section',
             $args
        );
-        
-        register_setting(
-            'swaptify_event_settings',
-            'action',
-            [
-                'type' => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ],
-       );
     }
     
     /**
@@ -1393,15 +1375,6 @@ class Swaptify_Admin
             'swaptify_visitor_types',
             'swaptify_visitor_types_section',
             $args
-       );
-        
-        register_setting(
-            'swaptify_visitor_types',
-            'action',
-            [
-                'type' => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ],
        );
     }
     
@@ -1492,15 +1465,6 @@ class Swaptify_Admin
             'swaptify_cookies',
             'swaptify_cookies_section',
             $args
-       );
-        
-        register_setting(
-            'swaptify_cookies',
-            'action',
-            [
-                'type' => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ],
        );
     }
     
@@ -1713,10 +1677,125 @@ class Swaptify_Admin
         if ($connect)
         {
             $segmentKey = isset($_POST['segment_key']) ? sanitize_key($_POST['segment_key']) : null;
-            
-            $swapsArray = Swaptify::createArrayForRequestBodyForEditingSwaps($_POST, $segmentKey); // phpcs:ignore
-            $newSwapsArray = Swaptify::createArrayForRequestBodyForEditingSwaps($_POST, $segmentKey, true); // phpcs:ignore
 
+            /**
+             * build array of objects for existing swaps
+             */
+            $swapsArray = [];
+            
+            $swapNames = isset($_POST['swap_name']) ? sanitize_term($_POST['swap_name'], 'swaptify', 'raw') : [];
+            $visitorTypes = isset($_POST['visitor_type']) ? sanitize_term($_POST['visitor_type'], 'swaptify', 'raw') : [];
+            $publishSwapKeys = isset($_POST['publish']) ? sanitize_term($_POST['publish'], 'swaptify', 'raw') : [];
+            $activeSwapKeys = isset($_POST['active']) ? sanitize_term($_POST['active'], 'swaptify', 'raw') : [];
+            $defaultSwapKey = isset($_POST['default']) ? sanitize_key($_POST['default']) : null;
+            
+            if (isset($swapNames['filter'])) { 
+                unset($swapNames['filter']); 
+            }
+            
+            if (isset($visitorTypes['filter'])) { 
+                unset($visitorTypes['filter']); 
+            }
+            
+            if (isset($publishSwapKeys['filter'])) { 
+                unset($publishSwapKeys['filter']); 
+            }
+            
+            if (isset($activeSwapKeys['filter'])) { 
+                unset($activeSwapKeys['filter']); 
+            }
+            
+            $visitorTypesBySwapKey = [];
+            
+            foreach ($visitorTypes as $visitorTypeKey => $visitorTypeArray) {
+                $visitorTypeKey = sanitize_key($visitorTypeKey);
+                foreach ($visitorTypeArray as $visitorTypeSwapKey => $on) {
+                    $visitorTypeSwapKey = sanitize_key($visitorTypeSwapKey);
+                    
+                    if (!isset($visitorTypesBySwapKey[$visitorTypeSwapKey])) {
+                        $visitorTypesBySwapKey[$visitorTypeSwapKey] = [];
+                    }
+                    
+                    $visitorTypesBySwapKey[$visitorTypeSwapKey][] = $visitorTypeKey;
+                }
+            }
+            
+            foreach ($swapNames as $swapKey => $swapName) {
+                $swapKey = sanitize_key($swapKey);
+                
+                $swap = new stdClass();
+                $swap->segment_key = $segmentKey;
+                $swap->swap_key = $swapKey;
+                $swap->name = $swapName;
+                $swap->content = isset($_POST['content-' . $swapKey]) ? wp_unslash($_POST['content-' . $swapKey]) : '';
+                $swap->sub_content = isset($_POST['sub_content'][$swapKey]) ? wp_unslash($_POST['sub_content'][$swapKey]) : null;
+                $swap->publish = isset($publishSwapKeys[$swapKey]) ? true : false;
+                $swap->active = isset($activeSwapKeys[$swapKey]) ? true : false;
+                $swap->default = $swapKey === $defaultSwapKey;
+                $swap->visitor_types = isset($visitorTypesBySwapKey[$swapKey]) ? $visitorTypesBySwapKey[$swapKey] : [];
+                
+                $swapsArray[] = $swap;
+            }
+            
+            $newSwapsArray = [];
+            
+            $newSwapNames = isset($_POST['new_swap_name']) ? sanitize_term($_POST['new_swap_name'], 'swaptify', 'raw') : [];
+            $newVisitorTypes = isset($_POST['new_visitor_type']) ? sanitize_term($_POST['new_visitor_type'], 'swaptify', 'raw') : [];
+            $newPublishSwapKeys = isset($_POST['new_publish']) ? sanitize_term($_POST['new_publish'], 'swaptify', 'raw') : [];
+            $newActiveSwapKeys = isset($_POST['new_active']) ? sanitize_term($_POST['new_active'], 'swaptify', 'raw') : [];
+            
+            if (isset($newSwapNames['filter'])) { 
+                unset($newSwapNames['filter']); 
+            }
+            
+            if (isset($newVisitorTypes['filter'])) { 
+                unset($newVisitorTypes['filter']); 
+            }
+            
+            if (isset($newPublishSwapKeys['filter'])) { 
+                unset($newPublishSwapKeys['filter']); 
+            }
+            
+            if (isset($newActiveSwapKeys['filter'])) { 
+                unset($newActiveSwapKeys['filter']); 
+            }
+            
+            /**
+             * build array of objects for new swaps
+             */
+            $newVisitorTypesBySwapKey = [];
+            
+            foreach ($newVisitorTypes as $visitorTypeKey => $visitorTypeArray) {
+                $visitorTypeKey = sanitize_key($visitorTypeKey);
+                foreach ($visitorTypeArray as $newKey => $on) {
+                    
+                    if (!isset($newVisitorTypesBySwapKey[$newKey])) {
+                        $newVisitorTypesBySwapKey[$newKey] = [];
+                    }
+                    
+                    $newVisitorTypesBySwapKey[$newKey][] = $visitorTypeKey;
+                }
+            }
+            
+            foreach ($newSwapNames as $key => $swapName) {
+                /**
+                 * need to cast key as a string to check for default
+                 */
+                $key = (string) $key;
+                
+                $newSwap = new stdClass();
+                $newSwap->segment_key = $segmentKey;
+                $newSwap->name = $swapName;
+                $newSwap->content = isset($_POST['new_content-' . $key]) ? wp_unslash($_POST['new_content-' . $key]) : '';
+                $newSwap->sub_content = isset($_POST['new_sub_content'][$key]) ? wp_unslash($_POST['new_sub_content'][$key]) : null;
+                $newSwap->publish = isset($newPublishSwapKeys[$key]) ? true : false;
+                $newSwap->active = isset($newActiveSwapKeys[$key]) ? true : false;
+                $newSwap->default = $key === $defaultSwapKey;
+                $newSwap->visitor_types = isset($newVisitorTypesBySwapKey[$key]) ? $newVisitorTypesBySwapKey[$key] : [];
+                
+                $newSwapsArray[] = $newSwap;
+            }
+            
             if ($segmentKey && ($swapsArray || $newSwapsArray))
             {
                 $error_string = '';

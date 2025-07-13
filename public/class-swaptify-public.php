@@ -60,8 +60,8 @@ class Swaptify_Public {
         add_action('wp_ajax_nopriv_swaptify_event', array($this, 'set_event'));
         add_action('wp_ajax_swaptify_event', array($this, 'set_event'));
         
-        add_action('wp_ajax_nopriv_get_swaps', array($this, 'get_swaps'));
-        add_action('wp_ajax_get_swaps', array($this, 'get_swaps'));
+        add_action('wp_ajax_nopriv_swaptify_get_swaps', array($this, 'get_swaps'));
+        add_action('wp_ajax_swaptify_get_swaps', array($this, 'get_swaps'));
         
     }
 
@@ -205,7 +205,7 @@ class Swaptify_Public {
         {
             $data = Swaptify::get($post_id, $url);
         }
-
+        
         if ($data)
         {
             if ($data->swaps) {

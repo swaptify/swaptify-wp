@@ -53,7 +53,7 @@ SwaptifyWP = {
         jQuery('#swaptify_id').remove();
         
         jQuery.post(url, {
-            action: 'get_swaps',
+            action: 'swaptify_get_swaps',
             id: id,
             url: window.location.href,
             swaptify_wp_nonce: swaptify_ajax.nonce
