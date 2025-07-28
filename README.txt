@@ -108,10 +108,10 @@ All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy]
 
 == Changelog ==
 
-= 1.0 =
+= 1.0.0 =
 * Swaptify launch version
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 1.0.0 =
 Launch version
