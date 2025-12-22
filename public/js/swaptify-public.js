@@ -1,15 +1,35 @@
-let swaps = null;
+let swaptifySwaps = null;
+let swaptifyConnecting = false;
 
 SwaptifyWP = {
-    visitor_type: function(keyOrName) {
+    visitor_type: function(keyOrName, refreshSwaps = false) {
+        
+        if (swaptifyConnecting) {
+            return;
+        }
+        
+        swaptifyConnecting = true;
+        
         const url = swaptify_ajax.swaptify_ajax_url;
+        
+        if (refreshSwaps) {
+            jQuery('.swaptify-render-segment').removeClass('swaptify-unblur');
+            jQuery('.swaptify-render-segment').addClass('swaptify-blur');
+        }
+        
+        let id = jQuery('#swaptify_id').val();
         
         jQuery.post(url, {
             action: 'swaptify_visitor_type',
             key: keyOrName,
-            swaptify_wp_nonce: swaptify_ajax.nonce
+            swaptify_wp_nonce: swaptify_ajax.nonce,
+            refresh_swaps: refreshSwaps,
+            id: id,
+            url: window.location.href
         }, function(response) {
-            // pass
+            
+            swaptifyConnecting = false;
+            
             if (response.visitor_types) 
             {
                 jQuery('body').removeClass(function (index, className) {
@@ -24,33 +44,77 @@ SwaptifyWP = {
                     jQuery('body').addClass(swaptify.slug_prefix + response.visitor_types[i].slug);
                 }
             }
+            
+            if (refreshSwaps) {
+                if (response.swaps) {   
+                    swaptifySwaps = response.swaps;
+                }
+                
+                jQuery(document).ready(function(){
+                    SwaptifyWP.render_swaps(); 
+                    SwaptifyWP.clean_swaps();
+                });
+            }
         },
         'json');
     },    
-    event: function(key) {
+    event: function(key, refreshSwaps = false) {
+        if (swaptifyConnecting) {
+            return;
+        }
+        
+        swaptifyConnecting = true;
+        
         const url = swaptify_ajax.swaptify_ajax_url;
+        
+        let id = jQuery('#swaptify_id').val();
+        
+        if (refreshSwaps) {
+            jQuery('.swaptify-render-segment').removeClass('swaptify-unblur');
+            jQuery('.swaptify-render-segment').addClass('swaptify-blur');
+        }
         
         jQuery.post(url, {
             action: 'swaptify_event',
             key: key,
-            swaptify_wp_nonce: swaptify_ajax.nonce
-        }, function(data) {
-           // pass 
+            swaptify_wp_nonce: swaptify_ajax.nonce,
+            refresh_swaps: refreshSwaps,
+            id: id,
+            url: window.location.href
+        }, function(response) {
+            swaptifyConnecting = false;
+            
+            if (refreshSwaps) {
+                
+                if (response.swaps) {
+                    swaptifySwaps = response.swaps;
+                }
+                
+                jQuery(document).ready(function(){
+                    SwaptifyWP.render_swaps(); 
+                    SwaptifyWP.clean_swaps();
+                });
+            }
         },
         'json');
     },
     get_swaps: function() {
+        
         if (jQuery('body').hasClass('preview') || swaptify.preview)
         {
             SwaptifyWP.clean_swaps();
             return;
         }
         
+        if (swaptifyConnecting) {
+            return;
+        }
+        
+        swaptifyConnecting = true;
+        
         const url = swaptify_ajax.swaptify_ajax_url;
         
         let id = jQuery('#swaptify_id').val();
-        
-        jQuery('#swaptify_id').remove();
         
         jQuery.post(url, {
             action: 'swaptify_get_swaps',
@@ -58,9 +122,10 @@ SwaptifyWP = {
             url: window.location.href,
             swaptify_wp_nonce: swaptify_ajax.nonce
         }, function(response) {
+            swaptifyConnecting = false;
             if (response.swaps)
             {
-                swaps = response.swaps;
+                swaptifySwaps = response.swaps;
                 
                 if (response.visitor_types) 
                 {
@@ -81,52 +146,43 @@ SwaptifyWP = {
             jQuery(document).ready(function(){
                 SwaptifyWP.render_swaps(); 
                 SwaptifyWP.clean_swaps();
-             });
+            });
         },
         'json');
         
     },
     render_swaps: function() {
-        if (swaps)
+        if (swaptifySwaps)
         {
-            for (const segmentKey in swaps.keys) 
+            for (const segmentKey in swaptifySwaps.keys) 
             {
                 var segment = jQuery('[data-swaptify_segment=' + segmentKey + ']');
-                var type = swaps.types[segmentKey];
+                var type = swaptifySwaps.types[segmentKey];
                 
                 if (type == 'image')
                 {
                     var img = jQuery('<img>');
-                    img.attr('src', swaps.data[segmentKey]);
-                    img.attr('title', swaps.subdata[segmentKey]);
-                    segment.html(img);
+                    img.attr('src', swaptifySwaps.data[segmentKey]);
+                    img.attr('title', swaptifySwaps.subdata[segmentKey]);
+                    segment.html('<div class="swaptify-inner-content">' + img + '</div>');
                 }
                 else if (type == 'url')
                 {
                     var anchor = jQuery('<a>');
-                    anchor.attr('href', swaps.data[segmentKey]);
-                    anchor.html(swaps.subdata[segmentKey]);
-                    segment.html(anchor);
+                    anchor.attr('href', swaptifySwaps.data[segmentKey]);
+                    anchor.html(swaptifySwaps.subdata[segmentKey]);
+                    segment.html('<div class="swaptify-inner-content">' + anchor + '</div>');
                 }
                 else 
                 {
-                    segment.html(swaps.data[segmentKey]);
+                    segment.html('<div class="swaptify-inner-content">' + swaptifySwaps.data[segmentKey] + '</div>');
                 }
-                segment.addClass('unblur');
-                segment.removeClass('swaptify-render-segment');
-                segment.removeClass('swap-type-url swap-type-image swap-type-text');
-                segment.removeAttr('data-swaptify_segment');
-                segment.removeAttr('data-swaptify_type');
+                segment.removeClass('swaptify-blur');
+                segment.addClass('swaptify-unblur');
             }
         }
     },
     clean_swaps: function() {
         jQuery('.swaptify-render-segment').find('.swaptify-render-swap:not(:visible)').remove();
-            
-            jQuery('.swaptify-render-segment')
-                .removeClass('swap-type-url swap-type-image swap-type-text')
-                .removeAttr('data-swaptify_type')
-                .removeAttr('data-swaptify_segment')
-                .removeClass('swaptify-render-segment');
     }
 }

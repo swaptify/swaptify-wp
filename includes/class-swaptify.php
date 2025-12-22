@@ -160,7 +160,7 @@ class Swaptify
         } 
         else 
         {
-            $this->version = '1.0.0';
+            $this->version = '1.1.0';
         }
         
         $this->plugin_name = 'swaptify';
@@ -1967,7 +1967,6 @@ class Swaptify
         $content = new stdClass();
         
         $content->property = $connection->property_key;
-        $content->update_all = true;
         $content->swaps = $swapArray;
                 
         $args = static::connectionArgs($connection);
@@ -2191,7 +2190,7 @@ class Swaptify
          * 
          * Will get the key attribute that is the segment key
          */
-        $pattern = '/(\[swaptify_segment)(_image|_url)*(\s.*key=")+([\-a-zA-Z0-9]+)("\.*)/';
+        $pattern = '/(\[swaptify_segment)(_image|_url)*(\s.*key=")+([\-a-zA-Z0-9]+)(".*)/';
 
         preg_match_all($pattern, $content, $keys);
         
@@ -2822,7 +2821,6 @@ class Swaptify
      */
     public static function get($id = null, $pageUrl = null)
     {
-        
         /**
          * if the request to get swaps has already been made, do not resubmit to the API
          */
@@ -3415,7 +3413,7 @@ class Swaptify
      * 
      * @return boolean
      */
-    public static function setVisitorType($key)
+    public static function setVisitorType($key, $refresh = false, $keys = [], $page_url = '')
     {
         /**
          * ensure the connection is set, if not, return false
@@ -3448,12 +3446,28 @@ class Swaptify
          * build the post body
          * NOTE: this can only be one key per request, even though it's an array
          */
-        $post['body'] = json_encode([
+        $body = [
             'property' => $connection->property_key,
             'visitor_key' => static::visitorCookie(),
-            'user_data' => static::userData(),
+            'user_data' => static::userData($page_url),
             'visitor_types' => [$key],
-        ]);
+        ];
+        
+        /**
+         * if refreshing, pull out the data key, since it includes events and visitor types in the raw array, but keep the 
+         * default_only array
+         */
+        
+        if ($refresh && isset($keys['data'])) {
+            $additional_body = [
+                'get_swaps' => true,
+                'data' => $keys['data'],
+            ];
+            
+            $body = array_merge($body, $additional_body);
+        }
+        
+        $post['body'] = json_encode($body);
         
         try 
         {
@@ -3480,6 +3494,28 @@ class Swaptify
                  */
                 if ($json && isset($json->success) && $json->success)
                 {
+                    if (isset($json->swaps) && $json->swaps) {
+                        
+                        $swaps = [];
+                        
+                        foreach ($json->swaps->keys as $key => $swapKey)
+                        {
+                            $swaps['data'][$key] = $json->swaps->data->$key;
+                            $swaps['subdata'][$key] = $json->swaps->subdata->$key;
+                            $swaps['keys'][$key] = $json->swaps->keys->$key;
+                            $swaps['types'][$key] = $json->swaps->segment_types->$key;
+                        }
+                        
+                        $json->swaps = $swaps;
+                    } else {
+                        $json->swaps = [];
+                    }
+                    
+                    return $json;
+                }
+                else {
+                    $json->success = true;
+                    $json->swaps = static::getDefaultContent($keys);
                     return $json;
                 }
             }
@@ -3504,7 +3540,7 @@ class Swaptify
      * 
      * @return boolean
      */
-    public static function setEventMet($key)
+    public static function setEventMet($key, $refresh = false, $keys = [], $page_url = '')
     {
         /**
          * ensure the connection is set, if not, return false
@@ -3537,12 +3573,23 @@ class Swaptify
          * build the post body
          * NOTE: this can only be one key per request
          */
-        $post['body'] = json_encode([
+        $body = [
             'property' => $connection->property_key,
             'visitor_key' => static::visitorCookie(),
-            'user_data' => static::userData(),
+            'user_data' => static::userData($page_url),
             'event' => $key,
-        ]);
+        ];
+        
+        if ($refresh && isset($keys['data'])) {
+            $additional_body = [
+                'get_swaps' => true,
+                'data' => $keys['data'],
+            ];
+            
+            $body = array_merge($body, $additional_body);
+        }
+        
+        $post['body'] = json_encode($body);
         
         try 
         {
@@ -3571,7 +3618,28 @@ class Swaptify
                  */
                 if ($json && isset($json->success) && $json->success)
                 {
-                    return true;
+                    if (isset($json->swaps) && $json->swaps) {
+                        
+                        $swaps = [];
+                        
+                        foreach ($json->swaps->keys as $key => $swapKey)
+                        {
+                            $swaps['data'][$key] = $json->swaps->data->$key;
+                            $swaps['subdata'][$key] = $json->swaps->subdata->$key;
+                            $swaps['keys'][$key] = $json->swaps->keys->$key;
+                            $swaps['types'][$key] = $json->swaps->segment_types->$key;
+                        }
+                        
+                        $json->swaps = $swaps;
+                    } else {
+                        $json->swaps = [];
+                    }
+                    
+                    return $json;
+                } else {
+                    $json->success = true;
+                    $json->swaps = static::getDefaultContent($keys);
+                    return $json;
                 }
             }
         }
@@ -3622,7 +3690,7 @@ class Swaptify
         if ($type)
         {
             $div .= 'data-swaptify_type="' . $type . '" ';
-            $classes[] = 'swap-type-' . $type;
+            $classes[] = 'swaptify-type-' . $type;
         }
         
         if ($attributes)
@@ -3640,7 +3708,10 @@ class Swaptify
             }
         }
         
-        $div .= 'class="' . implode(' ', $classes). '" ';
+        /**
+         * add swaptify-blur class to include initial render animation
+         */
+        $div .= 'class="swaptify-blur ' . implode(' ', $classes). '" ';
         
         if ($swapKey)
         {
@@ -3648,12 +3719,17 @@ class Swaptify
         }
         
         $div .= '>';
+        /**
+         * wrap 
+         */
+        $div .= '<div class="swaptify-inner-content">';
         
         if ($swapContent)
         {
             $div .= $swapContent;
         }
         
+        $div .= '</div>';
         $div .= '</div>';
     
         return $div;

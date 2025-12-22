@@ -131,17 +131,43 @@ class Swaptify_Public {
             exit;
         }
         
-        $success = false;
+        $success = new stdClass();
+        $success->success = false;
+        
+        
         
         $key = isset($_POST['key']) ? sanitize_key($_POST['key']) : null;
+        $refresh_swaps = isset($_POST['refresh_swaps']) ? (bool)sanitize_key($_POST['refresh_swaps']) : false;
+        $post_id = isset($_POST['id']) ? sanitize_key($_POST['id']) : null;
+        $url = isset($_POST['url']) ? sanitize_text_field(wp_unslash($_POST['url'])) : null;       
         
-        if ($key) {   
-            $success = Swaptify::setVisitorType($key);
+        $swap_keys = [];
+        if ($refresh_swaps && $post_id) {   
+            $swap_keys = Swaptify::getKeys($post_id);
         }
         
-        if ($success)
-        {
-            $response = $success;
+        if ($key) {   
+            $success = Swaptify::setVisitorType($key, $refresh_swaps, $swap_keys, $url);
+        }
+        
+        if ($success && isset($success->success) && $success->success)
+        {       
+            if (isset($success->swaps) && $success->swaps) {
+                
+                foreach ($success->swaps['data'] as $key => $swap) {
+                    if ($success->swaps['types'][$key] == 'text') {
+                        $success->swaps['data'][$key] = @do_shortcode($swap);
+                    }
+                }
+            }
+
+            $response = [
+                'swaps' => isset($success->swaps) ? $success->swaps : null,
+                'visitor_types' => $success->visitor_types,
+                'post_id' => $post_id,
+                'success' => true
+            ];
+            
         }
         else {
             $response = [
@@ -166,16 +192,37 @@ class Swaptify_Public {
             echo('Invalid submission');
             exit;
         }
-        $success = false;
+        
+        $success = new stdClass();
+        $success->success = false;
+        
+        $refresh_swaps = isset($_POST['refresh_swaps']) ? (bool)sanitize_key($_POST['refresh_swaps']) : false;
+        $post_id = isset($_POST['id']) ? sanitize_key($_POST['id']) : null;
+        $url = isset($_POST['url']) ? sanitize_text_field(wp_unslash($_POST['url'])) : null;       
+        
+        $swap_keys = [];
+        if ($refresh_swaps && $post_id) {   
+            $swap_keys = Swaptify::getKeys($post_id);
+        }
         
         $key = isset($_POST['key']) ? sanitize_key($_POST['key']) : null;
         
         if ($key) {
-            $success = Swaptify::setEventMet($key);
+            $success = Swaptify::setEventMet($key, $refresh_swaps, $swap_keys, $url);
+        }
+        
+        if (isset($success->swaps) && $success->swaps) {
+                
+            foreach ($success->swaps['data'] as $key => $swap) {
+                if ($success->swaps['types'][$key] == 'text') {
+                    $success->swaps['data'][$key] = @do_shortcode($swap);
+                }
+            }
         }
         
         $response = [
-            'success' => $success,
+            'success' => $success->success,
+            'swaps' => isset($success->swaps) ? $success->swaps : null,
             'type' => 'type',
             'key' => $key,
         ];
@@ -197,6 +244,7 @@ class Swaptify_Public {
             echo('Invalid submission');
             exit;
         }
+        
         $data = false;
         $post_id = isset($_POST['id']) ? sanitize_key($_POST['id']) : null;
         $url = isset($_POST['url']) ? sanitize_text_field(wp_unslash($_POST['url'])) : null;

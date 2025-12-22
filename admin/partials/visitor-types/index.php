@@ -51,7 +51,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;a class="swaptify-visitor-type-click-<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
                                             
+                                            <p>To update the Swaps immediately after changing Visitor Type, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;a class="swaptify-visitor-type-click-<?php echo(esc_attr($visitor_type->key)); ?> swaptify_refresh_swaps"&gt;...&lt;/a&gt;</code></pre>
+                                            
+                                            <br />
                                             <div>&mdash; OR &mdash;</div>
+                                            <br />
                                             
                                             <p>
                                                 Add the class <code>swaptify-visitor-type</code> 
@@ -61,7 +67,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             </p>
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;a class="swaptify-visitor-type" data-swaptify_key="<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
-                                           
+                                            
+                                            <p>To update the Swaps immediately after changing Visitor Type, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;a class="swaptify-visitor-type swaptify_refresh_swaps" data-swaptify_key="<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
+
+                                            <br /><br />
+                                            
                                             <h3>Trigger on a Form Submission</h3>                                        
                                             <p>
                                                 Add the class <code>swaptify-visitor-type-submit-<?php echo(esc_attr($visitor_type->key)); ?></code> to a form
@@ -69,7 +81,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;form class="swaptify-visitor-type-submit-<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
                                             
+                                            <p>To update the Swaps immediately after changing Visitor Type, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;form class="swaptify-visitor-type-submit-<?php echo(esc_attr($visitor_type->key)); ?> swaptify_refresh_swaps"&gt;...&lt;/form&gt;</code></pre>
+
+                                            <br />
                                             <div>&mdash; OR &mdash;</div>
+                                            <br />
                                             
                                             <p>
                                                 Add the class <code>swaptify-visitor-type</code> 
@@ -79,13 +97,24 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             </p>
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;form class="swaptify-visitor-type" data-swaptify_key="<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
-                                            <div>&mdash; OR &mdash;</div>
+                                            
+                                            <p>To update the Swaps immediately after changing Visitor Type, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;form class="swaptify-visitor-type swaptify_refresh_swaps" data-swaptify_key="<?php echo(esc_attr($visitor_type->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
+
+                                            <br /><br />
                                             
                                             <h3>Trigger on Pageview, Tag Manager, or Custom JS</h3>                                        
                                             <p>Use the follow tag to set the visitor type. This can be set on pageview by pasting the tag into an HTML block on the desired page. It can also be used as a tag inside Google Tag Manager or called from any custom JS event listener or behavior detection script.</p>
 <pre><code>&lt;script&gt;
     SwaptifyWP.visitor_type('<?php echo(esc_attr($visitor_type->key)); ?>');
 &lt;/script&gt;</code></pre>
+
+                                            <p>To update the Swaps immediately after changing Visitor Type, add <code>true</code> as the second parameter</p>
+<pre><code>&lt;script&gt;
+    SwaptifyWP.visitor_type('<?php echo(esc_attr($visitor_type->key)); ?>', true);
+&lt;/script&gt;</code></pre>
+
                                             
                                     </td>
                                     <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/visitor_types/<?php echo(esc_attr($visitor_type->key)) ?>/edit">delete</a></td>

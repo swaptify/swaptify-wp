@@ -48,7 +48,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;a class="swaptify-event-click-<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
                                             
+                                            <p>To update the Swaps immediately after triggering an Event, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;a class="swaptify-event-click-<?php echo(esc_attr($event->key)); ?> swaptify_refresh_swaps"&gt;...&lt;/a&gt;</code></pre>
+                                            
+                                            <br />
                                             <div>&mdash; OR &mdash;</div>
+                                            <br />
                                             
                                             <p>
                                                 Add the class <code>swaptify-event</code> 
@@ -58,16 +64,24 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             </p>
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;a class="swaptify-event" data-swaptify_key="<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
-                                            <div>&mdash; OR &mdash;</div>
+                                            
+                                            <p>To update the Swaps immediately after triggering an Event, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;a class="swaptify-event swaptify_refresh_swaps" data-swaptify_key="<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/a&gt;</code></pre>
+                                            
+                                            <br /><br /><br />
+                                            
                                         <?php elseif ($event->type == 'form_submitted'): ?>
-                                            <h3>Trigger the Form Submission</h3>                    s                    
+                                            <h3>Trigger the Form Submission</h3>                   
                                             <p>
                                                 Add the class <code>swaptify-event-submit-<?php echo(esc_attr($event->key)); ?></code> to a form
                                             </p>
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;form class="swaptify-event-submit-<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
                                             
+                                            <br />
                                             <div>&mdash; OR &mdash;</div>
+                                            <br />
                                             
                                             <p>
                                                 Add the class <code>swaptify-event</code> 
@@ -77,12 +91,23 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                             </p>
                                             <p><strong>Example:</strong></p>
                                             <pre><code>&lt;form class="swaptify-event" data-swaptify_key="<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
-                                            <div>&mdash; OR &mdash;</div>
+                                            
+                                            <p>To update the Swaps immediately after triggering an Event, include <code>swaptify_refresh_swaps</code> class</p>
+                                            <p><strong>Example:</strong></p>
+                                            <pre><code>&lt;form class="swaptify-event swaptify_refresh_swaps" data-swaptify_key="<?php echo(esc_attr($event->key)); ?>"&gt;...&lt;/form&gt;</code></pre>
+                                            
+                                            <br /><br /><br />
+                                            
                                         <?php else: ?>
                                         <?php endif; ?>
                                         <p>Use the follow script to recognize the event</p>
 <pre><code>&lt;script&gt;
     SwaptifyWP.event('<?php echo(esc_html($event->key)); ?>');
+&lt;/script&gt;</code></pre>
+
+                                        <p>To update the Swaps immediately after triggering an Evnt, add <code>true</code> as the second parameter</p>
+<pre><code>&lt;script&gt;
+    SwaptifyWP.event('<?php echo(esc_html($event->key)); ?>', true);
 &lt;/script&gt;</code></pre>
                                     </td>
                                     <td><a target="_blank" href="<?php echo(esc_url(Swaptify::$url)) ?>/events/<?php echo(esc_attr($event->key)) ?>/edit">delete</a></td>

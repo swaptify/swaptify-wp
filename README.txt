@@ -1,10 +1,10 @@
 === Swaptify ===
 Contributors: swaptify
 Donate link: https://github.com/swaptify
-Tags: comments, spam
+Tags: personalization, dynamic content, location, conditional, analytics, a b testing, conversion optimization, CRO
 Requires at least: 6.8
-Tested up to: 6.8
-Stable tag: 1.0.0
+Tested up to: 6.9
+Stable Tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 8.0
@@ -15,7 +15,7 @@ Cost-effective website personalization for perfected user experience and dramati
 
 This plugin integrates WordPress with Swaptify's hosted personalization software. Swaptify's free plan, "Nano," allows you to perform 1000 instances of personalized "swaps" every month. Pricing is usage-based with full control over your monthly budget and swap limit.
 
-Swaptify's personalization engine allows for flicker-free dynamic content, event-tracking, analytics, influential content reports, and — most importantly — easy portability to new website designs and infrastructures.
+Swaptify's personalization engine allows for flicker-free dynamic content, event-tracking, analytics, influential content reports, and easy portability to new website designs and infrastructures.
 
 ## What Does Swaptify Do?
 
@@ -28,7 +28,7 @@ Swaptify's personalization engine allows for flicker-free dynamic content, event
 
 * Intuitive swap builder that works with classic editor, Gutenberg, and any page builder that generates and accepts shortcodes, e.g. Elementor, WP Bakery, Divi, and more.
 * Hosted infrastructure allows your configurations and data to survive major website changes.
-* Flicker-free content display. This might seem like a small thing, but when you play with other content personalization tools, you'll quickly understand why this is a big deal.
+* Flicker-free content display. This might seem like a small thing, but when you play with other personalization tools, you'll quickly understand why this is a big deal.
 * Easy visitor type triggers on page load, element-click, or custom JavaScript.
 * Easy conversion tracking that can hook into existing Google Tag Manager setup or run independently.
 * Best-in-class Analytics system and Reports to analyze the influence of every swap that leads to a conversion.
@@ -67,7 +67,7 @@ To show dynamic content from a range of customer-selected preferences, use a coo
 * Page URL
 * URL Parameters
 
-Note: When a Rule is triggered, it overrides the visitor type.
+Note: Rules override visitor types.
 
 ## Analytics and Reports
 
@@ -79,8 +79,6 @@ Visit [https://swaptify.com/getting-started/](https://swaptify.com/getting-start
 
 
 == Installation ==
-
-NEEDED This section describes how to install the plugin and get it working.
 
 1. Install the plugin from the WordPress plugin store or upload the zip file using the upload plugin interface in the admin section
 1. Activate the plugin through the 'Plugins' menu in WordPress
@@ -108,10 +106,25 @@ All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy]
 
 == Changelog ==
 
+= 1.1.0 =
+* Added Swap refresh when setting visitor type
+* Added Swap refresh when triggering events
+* Added "Draft" label to unpublished Swaps
+* Added Swap loading animation on page load
+* Added fallback to display default content when a Swap request fails
+* Added safeguard to prevent multiple requests while one is already processing
+* Updated JavaScript variable names from Swap to Swaptify for uniqueness
+* Updated class names from Swap to Swaptify to ensure uniqueness and avoid conflicts
+* Fixed issue where the active flag was not saving on new Swaps
+* Fixed bug preventing Swaps from saving correctly to posts in the database
+
 = 1.0.0 =
 * Swaptify launch version
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Optimize Swap requests for speed and user experience
 
 = 1.0.0 =
 Launch version

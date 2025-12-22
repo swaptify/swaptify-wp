@@ -18,13 +18,15 @@ SwaptifyWP.get_swaps();
          * set actions for swaptify-event class with data attribute
          */
         $('.swaptify-event').on('click', function() {
-            const key = $(this).data('swaptify_key'); 
-            SwaptifyWP.event(key); 
+            const key = $(this).data('swaptify_key');
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps'); 
+            SwaptifyWP.event(key, refreshSwaps); 
         });
         
         $('.swaptify-event').on('submit', function() {
-            const key = $(this).data('swaptify_key'); 
-            SwaptifyWP.event(key); 
+            const key = $(this).data('swaptify_key');
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps'); 
+            SwaptifyWP.event(key, refreshSwaps);  
         });
         
         /**
@@ -32,16 +34,17 @@ SwaptifyWP.get_swaps();
          */
         $("*[class*='swaptify-event-click-']").each(function() {
             const key = $(this).attr("class").match(/(?:^|\s)swaptify\-event\-click\-([^\s]*)/)[1];
-            
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
             $(this).on('click', function(){
-                SwaptifyWP.event(key);
+                SwaptifyWP.event(key, refreshSwaps); 
             });
         });
     
         $("*[class*='swaptify-event-submit-']").each(function() {
             const key = $(this).attr("class").match(/(?:^|\s)swaptify\-event\-submit\-([^\s]*)/)[1];
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
             $(this).on('submit', function(){
-                SwaptifyWP.event(key);
+                SwaptifyWP.event(key, refreshSwaps); 
             });
         });
     
@@ -54,12 +57,14 @@ SwaptifyWP.get_swaps();
          */
         $('.swaptify-visitor-type').on('click', function(){
             const key = $(this).data('swaptify_key'); 
-            SwaptifyWP.visitor_type(key); 
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
+            SwaptifyWP.visitor_type(key, refreshSwaps); 
         });
         
         $('.swaptify-visitor-type').on('submit', function(){
             const key = $(this).data('swaptify_key'); 
-            SwaptifyWP.visitor_type(key); 
+            const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
+            SwaptifyWP.visitor_type(key, refreshSwaps); 
         });
         
         /**
@@ -69,7 +74,8 @@ SwaptifyWP.get_swaps();
             const key = $(this).attr("class").match(/(?:^|\s)swaptify\-visitor\-type\-click\-([^\s]*)/)[1];
             
             $(this).on('click', function(){
-                SwaptifyWP.visitor_type(key);
+                const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
+                SwaptifyWP.visitor_type(key, refreshSwaps);
             });
         });
         
@@ -77,7 +83,8 @@ SwaptifyWP.get_swaps();
             const key = $(this).attr("class").match(/(?:^|\s)swaptify\-visitor\-type\-submit\-([^\s]*)/)[1];
             
             $(this).on('submit', function(){
-                SwaptifyWP.visitor_type(key);
+                const refreshSwaps = $(this).hasClass('swaptify_refresh_swaps');
+                SwaptifyWP.visitor_type(key, refreshSwaps);
             });
         });
     });

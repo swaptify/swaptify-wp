@@ -35,6 +35,11 @@ if ($segment->type == 'text'): ?>
     <?php foreach ($segment->swaps as $swap): ?>
         <div class="swap-div" data-swap_key="<?php echo(esc_attr($swap->key)); ?>">
             <div class="swaptify-segment-form-left">
+                <?php if (!$swap->published): ?>
+                    <div>
+                        <h3><em>Draft</em></h3>
+                    </div>
+                <?php endif; ?>
                 <label for="swap_name_<?php echo(esc_attr($swap->key)); ?>">Swap Name:</label> 
                 <input 
                     type="text" 
@@ -46,19 +51,18 @@ if ($segment->type == 'text'): ?>
                 />
                 <br />
                 
-                <div>
-                    <label for="publish-<?php echo(esc_attr($swap->key)); ?>">
-                        <input 
-                            type="checkbox"
-                            id="publish-<?php echo(esc_attr($swap->key)); ?>"
-                            name="publish[<?php echo(esc_attr($swap->key)); ?>]"
-                            <?php if ($swap->published): ?>
-                                checked="checked"
-                            <?php endif; ?>
-                        />
-                        Publish
-                    </label>    
-                </div>
+                <?php if (!$swap->published): ?>
+                    <div>
+                        <label for="publish-<?php echo(esc_attr($swap->key)); ?>">
+                            <input 
+                                type="checkbox"
+                                id="publish-<?php echo(esc_attr($swap->key)); ?>"
+                                name="publish[<?php echo(esc_attr($swap->key)); ?>]"
+                            />
+                            Publish
+                        </label>    
+                    </div>
+                <?php endif; ?>
                 
                 <div>
                     <label for="active-<?php echo(esc_attr($swap->key)); ?>">
@@ -232,6 +236,9 @@ if ($segment->type == 'text'): ?>
 
 <div id="new-swap-field" style="display:none";>
     <div class="swaptify-segment-form-left">
+        <div>
+            <h3><em>Draft</em></h3>
+        </div>
         <label for="swap_name_">Swap Name:</label> 
         <input 
             type="text" 

@@ -63,14 +63,12 @@ jQuery(function(){
         div.find('.swaptify-segment-form-left label[for="publish-"]').attr('for', 'new_publish_' + newSwapId);
         div.find('.swaptify-segment-form-left input[name="publish[]"]')
             .attr('name', 'new_publish[' + newSwapId + ']')
-            .attr('id', 'new_publish_' + newSwapId)
-            .prop('checked', 'checked');
+            .attr('id', 'new_publish_' + newSwapId);
         
         div.find('.swaptify-segment-form-left label[for="active-"]').attr('for', 'new_active_' + newSwapId);
         div.find('.swaptify-segment-form-left input[name="active[]"]')
             .attr('name', 'new_active[' + newSwapId + ']')
-            .attr('id', 'new_active_' + newSwapId)
-            .prop('checked', 'checked');
+            .attr('id', 'new_active_' + newSwapId);
         
         div.find('.swaptify-segment-form-left label[for="default-"]').attr('for', 'new_default_' + newSwapId);
         div.find('.swaptify-segment-form-left input[id="default-"]').attr('id', 'new_default_' + newSwapId).val(newSwapId);
@@ -293,6 +291,8 @@ jQuery(function(){
         if (jQuery('.swap-div').length === 1) {
             jQuery('.swap-div').addClass('default');
             jQuery('.swap-div label[for*="default"] > input').prop("checked", true);
+            jQuery('.swap-div label[for*="publish"] > input').prop("checked", true);
+            jQuery('.swap-div label[for*="active"] > input').prop("checked", true);
         }
     });
     

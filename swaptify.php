@@ -20,7 +20,7 @@
  * Plugin Name:       Swaptify
  * Plugin URI:        https://swaptify.com
  * Description:       Swaptify personalizes content for each visitor with the aim of increasing conversions
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Swaptify
  * Author URI:        https://github.com/swaptify
  * License:           GPL-2.0+
