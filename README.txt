@@ -4,7 +4,7 @@ Donate link: https://github.com/swaptify
 Tags: personalization, dynamic content, location, conditional, analytics, a b testing, conversion optimization, CRO
 Requires at least: 6.8
 Tested up to: 6.9
-Stable Tag: 1.2.0
+Stable Tag: 1.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 8.0
@@ -105,6 +105,9 @@ All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy]
 7. Visitor Types
 
 == Changelog ==
+
+= 1.2.2 =
+* Fixed version tag
 
 = 1.2.0 =
 * Added consent mode

@@ -171,7 +171,7 @@ class Swaptify
         } 
         else 
         {
-            $this->version = '1.2.1';
+            $this->version = '1.2.2';
         }
         
         $this->plugin_name = 'swaptify';
