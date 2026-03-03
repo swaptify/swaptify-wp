@@ -4,7 +4,7 @@ Donate link: https://github.com/swaptify
 Tags: personalization, dynamic content, location, conditional, analytics, a b testing, conversion optimization, CRO
 Requires at least: 6.8
 Tested up to: 6.9
-Stable Tag: 1.1.0
+Stable Tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 8.0
@@ -106,6 +106,10 @@ All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy]
 
 == Changelog ==
 
+= 1.2.0 =
+* Added consent mode
+* Fixed issue with debouncing requests
+
 = 1.1.0 =
 * Added Swap refresh when setting visitor type
 * Added Swap refresh when triggering events
@@ -122,6 +126,9 @@ All data passed and stored to Swaptify falls under the Swaptify [Privacy Policy]
 * Swaptify launch version
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Added consent mode
 
 = 1.1.0 =
 Optimize Swap requests for speed and user experience

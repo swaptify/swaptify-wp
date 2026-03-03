@@ -26,6 +26,47 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             do_settings_sections('swaptify_configuration_settings'); 
         ?>    
         <?php if ($propertySet): ?>  
+            <h3>Property Settings</h3>
+            <p>To update your settings, <a href="<?php echo(esc_url(Swaptify::$url)); ?>/properties/<?php echo($setProperty->key); ?>/edit" target="_blank">click here</a></p>
+            
+            <p><strong>Filter Unverified Data: </strong><?php echo($setProperty->filter_unverified_data ? 'Yes' : 'No'); ?></p>
+            <p><strong>No Rule Display Setting: </strong><?php echo($setProperty->no_rule_display_setting); ?></p>
+            <p><strong>Visitor Session Expiration (Minutes): </strong><?php echo($setProperty->session_expiration_minutes); ?></p>
+            
+            <p><strong>Consent Mode On: </strong><?php echo($setProperty->consent_required ? 'Yes' : 'No'); ?></p>
+            
+            <?php if ($setProperty->consent_required): ?>
+                <h4>Consent Scripts</h4>
+                <p>Grant Consent</p>
+                <pre>
+        &lt;script&gt;
+            SwaptifyWP.grant_consent();
+        &lt;/script&gt;
+                </pre>
+                
+                <p>Grant Consent and retrigger swaps</p>
+                <pre>
+        &lt;script&gt;
+            SwaptifyWP.grant_consent(true);
+        &lt;/script&gt;
+                </pre>
+                
+                <p>Revoke Consent</p>
+                <pre>
+        &lt;script&gt;
+            SwaptifyWP.revoke_consent();
+        &lt;/script&gt;
+                </pre>
+                
+                <p>Revoke Consent and retrigger swaps</p>
+                <pre>
+        &lt;script&gt;
+            SwaptifyWP.revoke_consent(true);
+        &lt;/script&gt;
+                </pre>
+
+            <?php endif; ?>
+            
             <div>
                 <label for="swaptify_confirm_property_change">
                     <input type="checkbox" id="swaptify_confirm_property_change"/> 

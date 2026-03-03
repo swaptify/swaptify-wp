@@ -55,6 +55,15 @@ class Swaptify
      * @var string
      */
     public static $cookieName = 'swaptify';
+    
+    /**
+     * swaptify cookie name that is used to confirm consent was granted
+     * 
+     * @since 1.2.0
+     * 
+     * @var string
+     */
+    public static $consentCookieName = 'swaptify_consent';
 
     public static $slugPrefix = 'swaptify-visitor_type-';
     
@@ -140,6 +149,8 @@ class Swaptify
      */
     protected $version;
 
+    public static $properties = null;
+    
     /**
      * Define the core functionality of the plugin.
      *
@@ -1513,6 +1524,11 @@ class Swaptify
      */
     public static function getProperties()
     {
+        
+        if (static::$properties !== null) {
+            return static::$properties;
+        }
+        
         $data = [];
         
         /**
@@ -1562,6 +1578,7 @@ class Swaptify
                 if ($json)
                 {
                     $data = $json;
+                    static::$properties = $data;
                 }
                 
                 return $data;
@@ -2881,6 +2898,11 @@ class Swaptify
             'user_data' => static::userData($pageUrl)
         ];
         
+        if (isset($_COOKIE[static::$consentCookieName]) && $_COOKIE[static::$consentCookieName]) {
+            $visit_array['consent_granted'] = true;
+            $visit_array['consent_key'] = $_COOKIE[static::$consentCookieName];
+        }
+        
         /**
          * merge the visit data and key data to put in the request body
          */
@@ -3453,6 +3475,11 @@ class Swaptify
             'visitor_types' => [$key],
         ];
         
+        if (isset($_COOKIE[static::$consentCookieName]) && $_COOKIE[static::$consentCookieName]) {
+            $body['consent_granted'] = true;
+            $body['consent_key'] = $_COOKIE[static::$consentCookieName];
+        }
+        
         /**
          * if refreshing, pull out the data key, since it includes events and visitor types in the raw array, but keep the 
          * default_only array
@@ -3580,6 +3607,11 @@ class Swaptify
             'event' => $key,
         ];
         
+        if (isset($_COOKIE[static::$consentCookieName]) && $_COOKIE[static::$consentCookieName]) {
+            $body['consent_granted'] = true;
+            $body['consent_key'] = $_COOKIE[static::$consentCookieName];
+        }
+        
         if ($refresh && isset($keys['data'])) {
             $additional_body = [
                 'get_swaps' => true,
@@ -3665,6 +3697,18 @@ class Swaptify
     {
         return isset($_COOKIE[static::$cookieName]) ? sanitize_key(wp_unslash($_COOKIE[static::$cookieName])) : null; // phpcs:ignore
     }
+    
+    /**
+     * Retreive the consent cookie value
+     *
+     * @since 1.2.0
+     * 
+     * @return string|null
+     */
+    public static function consentCookie()
+    {
+        return isset($_COOKIE[static::$consentCookieName]) ? sanitize_key(wp_unslash($_COOKIE[static::$consentCookieName])) : null; // phpcs:ignore
+    }
      
     /**
      * Create an HTML div for a given Segment
@@ -3744,5 +3788,111 @@ class Swaptify
         }
         
         return '[' . $name . ' key="' . $key . '"]';
-    }    
+    }
+    
+    /**
+     * Sent a request to revoke consent. This will prevent all future recording of data for the included visitor key
+     * You must have a consent_key established to revoke consent
+     *
+     * @since 1.2.0
+     * 
+     * @return object|boolean
+     */
+    public static function revoke_consent()
+    {
+        $success = false;
+        $message = null;
+        /**
+         * check if the connection is setup, if not, return false
+         */
+        $connection = static::connect();
+        
+        if (!$connection)
+        {
+            $json = new stdClass();
+            $json->success = false;
+            $json->message = 'Swaptify not connected';
+            return ;
+        }
+        
+        /**
+         * build the request
+         */
+        $request = new WP_Http();
+        
+        $url = $connection->url . 'consent/revoke';
+        
+        /**
+         * build the request data
+         */
+        $post = static::connectionArgs($connection);
+        $body = [
+            'property' => $connection->property_key,
+            'visitor_key' => static::visitorCookie(),
+            'consent_key' => static::consentCookie(),
+        ];
+        
+        $post['body'] = json_encode($body);
+        try 
+        {
+            /**
+             * run the request
+             */    
+            $response = $request->post($url, $post);
+            
+            if (!is_wp_error($response))
+            {
+                $content = (string) $response['body'];
+                $json = json_decode($content);
+                
+                /**
+                 * if there is a response, confirm it contains a body
+                 * if not, set the json variable to false
+                 */
+                if (is_array($response) && isset($response['body']))
+                {   
+                    $content = (string) $response['body'];
+                    $json = json_decode($content);
+                }
+                else
+                {
+                    $json = false;
+                }
+                                
+                if ($json)
+                {
+                    if (isset($json->success) && $json->success) 
+                    {
+                        $success = true;    
+                    } 
+                    else 
+                    {
+                        if (isset($json->message) && $json->message) 
+                        {
+                            $message = $json->message;
+                        }
+                        else
+                        {
+                            $message = 'An unknown error occurred while revoking consent';
+                        }
+                    }
+                }
+            }
+            else
+            {
+                $message = 'Invalid response';
+            }
+            
+        }
+        catch (Exception $e)
+        {
+            $message = 'Unable to connect';
+        }
+
+        $object = new stdClass();
+        $object->success = $success;
+        $object->message = $message;
+        
+        return $object;
+    }
 }

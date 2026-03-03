@@ -245,6 +245,9 @@ class Swaptify_Admin
          * $propertySet is used in the partial file below
          */
         $propertySet = false;
+        $properties = Swaptify::getProperties();
+        
+        $setProperty = null;
         
         if ($propertyKey)
         {
@@ -252,7 +255,14 @@ class Swaptify_Admin
             
             add_action( 'admin_enqueue_scripts', [$this, 'configurationScripts'] );
             do_action( 'admin_enqueue_scripts' );
-
+            
+            foreach ($properties as $property)
+            {
+                if ($property->key === $propertyKey) {
+                    $setProperty = $property;
+                    break;
+                }
+            }
         }
         
         require_once 'partials/configuration/index.php';

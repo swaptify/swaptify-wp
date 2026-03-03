@@ -63,6 +63,12 @@ class Swaptify_Public {
         add_action('wp_ajax_nopriv_swaptify_get_swaps', array($this, 'get_swaps'));
         add_action('wp_ajax_swaptify_get_swaps', array($this, 'get_swaps'));
         
+        add_action('wp_ajax_nopriv_swaptify_grant_consent', array($this, 'grant_consent'));
+        add_action('wp_ajax_swaptify_grant_consent', array($this, 'grant_consent'));
+        
+        add_action('wp_ajax_nopriv_swaptify_revoke_consent', array($this, 'revoke_consent'));
+        add_action('wp_ajax_swaptify_revoke_consent', array($this, 'revoke_consent'));
+        
     }
 
     /**
@@ -269,6 +275,67 @@ class Swaptify_Public {
                 'visitor_types' => $data->visitor_types,
                 'post_id' => $post_id,
             ];
+        }
+
+        echo(wp_json_encode($response));
+        exit(1);
+    }
+    
+    /**
+     * Get Swaps for a given post
+     *
+     * @since 1.2.0
+     * 
+     * @return void
+     */
+    public function grant_consent()
+    {
+        if (!isset($_POST['swaptify_wp_nonce']) || !wp_verify_nonce(sanitize_key($_POST['swaptify_wp_nonce']), 'swaptify_wp_nonce')) {
+            echo('Invalid submission');
+            exit;
+        }
+
+        $uuid = wp_generate_uuid4();
+        
+        setcookie(Swaptify::$consentCookieName, $uuid, time()+60*60*24*31, '/');
+        $_COOKIE[Swaptify::$consentCookieName] = $uuid;
+        
+        $response = [
+            'success' => true,
+            Swaptify::$consentCookieName => $uuid,
+        ];
+
+        echo(wp_json_encode($response));
+        exit(1);
+    }
+    
+    /**
+     * Get Swaps for a given post
+     *
+     * @since 1.2.0
+     * 
+     * @return void
+     */
+    public function revoke_consent()
+    {
+        if (!isset($_POST['swaptify_wp_nonce']) || !wp_verify_nonce(sanitize_key($_POST['swaptify_wp_nonce']), 'swaptify_wp_nonce')) {
+            echo('Invalid submission');
+            exit;
+        }
+        
+        $response = Swaptify::revoke_consent();
+        
+        if ($response && isset($response->success) && $response->success)
+        {
+            if (isset($_COOKIE[Swaptify::$consentCookieName])) {
+                setcookie(Swaptify::$consentCookieName, '', time() - 36000, '/');
+                unset($_COOKIE[Swaptify::$consentCookieName]);
+            }
+            
+            if (isset($_COOKIE[Swaptify::$cookieName])) {
+                setcookie(Swaptify::$cookieName, '', time() - 36000, '/');
+                unset($_COOKIE[Swaptify::$cookieName]);
+            }
         }
 
         echo(wp_json_encode($response));
