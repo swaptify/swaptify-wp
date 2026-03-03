@@ -20,7 +20,7 @@
  * Plugin Name:       Swaptify
  * Plugin URI:        https://swaptify.com
  * Description:       Swaptify personalizes content for each visitor with the aim of increasing conversions
- * Version:           1.1.0
+ * Version:           1.2.1
  * Author:            Swaptify
  * Author URI:        https://github.com/swaptify
  * License:           GPL-2.0+
@@ -39,7 +39,7 @@ if (!defined('WPINC'))
  * Currently plugin version number
  * use SemVer - https://semver.org for naming
  */
-define('swaptify_version', '1.0.0');
+define('swaptify_version', '1.2.1');
 
 /**
  * Load and run the functions via the activator
